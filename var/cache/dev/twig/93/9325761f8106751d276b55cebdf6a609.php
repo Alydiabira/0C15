@@ -1,0 +1,313 @@
+<?php
+
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Extension\CoreExtension;
+use Twig\Extension\SandboxExtension;
+use Twig\Markup;
+use Twig\Sandbox\SecurityError;
+use Twig\Sandbox\SecurityNotAllowedTagError;
+use Twig\Sandbox\SecurityNotAllowedFilterError;
+use Twig\Sandbox\SecurityNotAllowedFunctionError;
+use Twig\Source;
+use Twig\Template;
+
+/* admin/media/index.html.twig */
+class __TwigTemplate_fcfd224fa46b0c8017c03bac6ba4d8a7 extends Template
+{
+    private $source;
+    private $macros = [];
+
+    public function __construct(Environment $env)
+    {
+        parent::__construct($env);
+
+        $this->source = $this->getSourceContext();
+
+        $this->blocks = [
+            'admin' => [$this, 'block_admin'],
+        ];
+    }
+
+    protected function doGetParent(array $context)
+    {
+        // line 1
+        return "admin.html.twig";
+    }
+
+    protected function doDisplay(array $context, array $blocks = [])
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "admin/media/index.html.twig"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "admin/media/index.html.twig"));
+
+        $this->parent = $this->loadTemplate("admin.html.twig", "admin/media/index.html.twig", 1);
+        yield from $this->parent->unwrap()->yield($context, array_merge($this->blocks, $blocks));
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+    }
+
+    // line 3
+    public function block_admin($context, array $blocks = [])
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "admin"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "admin"));
+
+        // line 4
+        yield "    <div class=\"d-flex justify-content-between align-items-center\">
+        <h1>Medias</h1>
+        <a href=\"";
+        // line 6
+        yield $this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_add");
+        yield "\" class=\"btn btn-primary\">Ajouter</a>
+    </div>
+    <table class=\"table\">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Titre</th>
+                ";
+        // line 13
+        if ($this->extensions['Symfony\Bridge\Twig\Extension\SecurityExtension']->isGranted("ROLE_ADMIN")) {
+            // line 14
+            yield "                    <th>Artiste</th>
+                    <th>Album</th>
+                ";
+        }
+        // line 17
+        yield "                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ";
+        // line 21
+        $context['_parent'] = $context;
+        $context['_seq'] = CoreExtension::ensureTraversable((isset($context["medias"]) || array_key_exists("medias", $context) ? $context["medias"] : (function () { throw new RuntimeError('Variable "medias" does not exist.', 21, $this->source); })()));
+        foreach ($context['_seq'] as $context["_key"] => $context["media"]) {
+            // line 22
+            yield "                <tr>
+                    <td><img src=\"";
+            // line 23
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\AssetExtension']->getAssetUrl(CoreExtension::getAttribute($this->env, $this->source, $context["media"], "path", [], "any", false, false, false, 23)), "html", null, true);
+            yield "\" width=\"75\" /></td>
+                    <td>";
+            // line 24
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape(CoreExtension::getAttribute($this->env, $this->source, $context["media"], "title", [], "any", false, false, false, 24), "html", null, true);
+            yield "</td>
+                    ";
+            // line 25
+            if ($this->extensions['Symfony\Bridge\Twig\Extension\SecurityExtension']->isGranted("ROLE_ADMIN")) {
+                // line 26
+                yield "                        <td>";
+                yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape(CoreExtension::getAttribute($this->env, $this->source, CoreExtension::getAttribute($this->env, $this->source, $context["media"], "user", [], "any", false, false, false, 26), "name", [], "any", false, false, false, 26), "html", null, true);
+                yield "</td>
+                        <td>";
+                // line 27
+                (((CoreExtension::getAttribute($this->env, $this->source, CoreExtension::getAttribute($this->env, $this->source, $context["media"], "album", [], "any", false, true, false, 27), "name", [], "any", true, true, false, 27) &&  !(null === CoreExtension::getAttribute($this->env, $this->source, CoreExtension::getAttribute($this->env, $this->source, $context["media"], "album", [], "any", false, true, false, 27), "name", [], "any", false, false, false, 27)))) ? (yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape(CoreExtension::getAttribute($this->env, $this->source, CoreExtension::getAttribute($this->env, $this->source, $context["media"], "album", [], "any", false, true, false, 27), "name", [], "any", false, false, false, 27), "html", null, true)) : (yield ""));
+                yield "</td>
+                    ";
+            }
+            // line 29
+            yield "                    <td>
+                        <a href=\"";
+            // line 30
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_delete", ["id" => CoreExtension::getAttribute($this->env, $this->source, $context["media"], "id", [], "any", false, false, false, 30)]), "html", null, true);
+            yield "\" class=\"btn btn-danger\">Supprimer</a>
+                    </td>
+                </tr>
+            ";
+        }
+        $_parent = $context['_parent'];
+        unset($context['_seq'], $context['_iterated'], $context['_key'], $context['media'], $context['_parent'], $context['loop']);
+        $context = array_intersect_key($context, $_parent) + $_parent;
+        // line 34
+        yield "        </tbody>
+    </table>
+    ";
+        // line 36
+        $context["totalPages"] = Twig\Extension\CoreExtension::round(((isset($context["total"]) || array_key_exists("total", $context) ? $context["total"] : (function () { throw new RuntimeError('Variable "total" does not exist.', 36, $this->source); })()) / 50), 0, "ceil");
+        // line 37
+        yield "
+    <nav aria-label=\"Page navigation\">
+        <ul class=\"pagination\">
+            ";
+        // line 40
+        if (((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 40, $this->source); })()) > 1)) {
+            // line 41
+            yield "                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"";
+            // line 42
+            yield $this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_index", ["page" => 1]);
+            yield "\">Première page</a>
+                </li>
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"";
+            // line 45
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_index", ["page" => ((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 45, $this->source); })()) - 1)]), "html", null, true);
+            yield "\">Précédent</a>
+                </li>
+            ";
+        }
+        // line 48
+        yield "
+            ";
+        // line 49
+        $context['_parent'] = $context;
+        $context['_seq'] = CoreExtension::ensureTraversable(range(max(1, ((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 49, $this->source); })()) - 3)), min((isset($context["totalPages"]) || array_key_exists("totalPages", $context) ? $context["totalPages"] : (function () { throw new RuntimeError('Variable "totalPages" does not exist.', 49, $this->source); })()), ((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 49, $this->source); })()) + 3))));
+        foreach ($context['_seq'] as $context["_key"] => $context["i"]) {
+            // line 50
+            yield "                <li class=\"page-item ";
+            if (($context["i"] == (isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 50, $this->source); })()))) {
+                yield "active";
+            }
+            yield "\">
+                    <a class=\"page-link\" href=\"";
+            // line 51
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_index", ["page" => $context["i"]]), "html", null, true);
+            yield "\">";
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($context["i"], "html", null, true);
+            yield "</a>
+                </li>
+            ";
+        }
+        $_parent = $context['_parent'];
+        unset($context['_seq'], $context['_iterated'], $context['_key'], $context['i'], $context['_parent'], $context['loop']);
+        $context = array_intersect_key($context, $_parent) + $_parent;
+        // line 54
+        yield "
+            ";
+        // line 55
+        if (((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 55, $this->source); })()) < (isset($context["totalPages"]) || array_key_exists("totalPages", $context) ? $context["totalPages"] : (function () { throw new RuntimeError('Variable "totalPages" does not exist.', 55, $this->source); })()))) {
+            // line 56
+            yield "                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"";
+            // line 57
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_index", ["page" => ((isset($context["page"]) || array_key_exists("page", $context) ? $context["page"] : (function () { throw new RuntimeError('Variable "page" does not exist.', 57, $this->source); })()) + 1)]), "html", null, true);
+            yield "\">Suivant</a>
+                </li>
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"";
+            // line 60
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape($this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_media_index", ["page" => (isset($context["totalPages"]) || array_key_exists("totalPages", $context) ? $context["totalPages"] : (function () { throw new RuntimeError('Variable "totalPages" does not exist.', 60, $this->source); })())]), "html", null, true);
+            yield "\">Dernière page</a>
+                </li>
+            ";
+        }
+        // line 63
+        yield "        </ul>
+    </nav>
+";
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        return; yield '';
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function getTemplateName()
+    {
+        return "admin/media/index.html.twig";
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function isTraitable()
+    {
+        return false;
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function getDebugInfo()
+    {
+        return array (  209 => 63,  203 => 60,  197 => 57,  194 => 56,  192 => 55,  189 => 54,  178 => 51,  171 => 50,  167 => 49,  164 => 48,  158 => 45,  152 => 42,  149 => 41,  147 => 40,  142 => 37,  140 => 36,  136 => 34,  126 => 30,  123 => 29,  118 => 27,  113 => 26,  111 => 25,  107 => 24,  103 => 23,  100 => 22,  96 => 21,  90 => 17,  85 => 14,  83 => 13,  73 => 6,  69 => 4,  59 => 3,  36 => 1,);
+    }
+
+    public function getSourceContext()
+    {
+        return new Source("{% extends 'admin.html.twig' %}
+
+{% block admin %}
+    <div class=\"d-flex justify-content-between align-items-center\">
+        <h1>Medias</h1>
+        <a href=\"{{ path('admin_media_add') }}\" class=\"btn btn-primary\">Ajouter</a>
+    </div>
+    <table class=\"table\">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Titre</th>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <th>Artiste</th>
+                    <th>Album</th>
+                {% endif %}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for media in medias %}
+                <tr>
+                    <td><img src=\"{{ asset(media.path) }}\" width=\"75\" /></td>
+                    <td>{{ media.title }}</td>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <td>{{ media.user.name }}</td>
+                        <td>{{ media.album.name ?? '' }}</td>
+                    {% endif %}
+                    <td>
+                        <a href=\"{{ path('admin_media_delete', {id: media.id}) }}\" class=\"btn btn-danger\">Supprimer</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% set totalPages = (total / 50)|round(0, 'ceil') %}
+
+    <nav aria-label=\"Page navigation\">
+        <ul class=\"pagination\">
+            {% if page > 1 %}
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"{{ path('admin_media_index', {page: 1}) }}\">Première page</a>
+                </li>
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"{{ path('admin_media_index', {page: page - 1}) }}\">Précédent</a>
+                </li>
+            {% endif %}
+
+            {% for i in range(max(1, page - 3), min(totalPages, page + 3)) %}
+                <li class=\"page-item {% if i == page %}active{% endif %}\">
+                    <a class=\"page-link\" href=\"{{ path('admin_media_index', {page: i}) }}\">{{ i }}</a>
+                </li>
+            {% endfor %}
+
+            {% if page < totalPages %}
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"{{ path('admin_media_index', {page: page + 1}) }}\">Suivant</a>
+                </li>
+                <li class=\"page-item\">
+                    <a class=\"page-link\" href=\"{{ path('admin_media_index', {page: totalPages}) }}\">Dernière page</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endblock %}", "admin/media/index.html.twig", "/Users/diabiraaly/Desktop/Bureau - MacBook Air de DIABIRA/Openclassrooms/0C15/templates/admin/media/index.html.twig");
+    }
+}

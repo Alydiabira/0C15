@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "63a22298449e1115cb43a18cd2b78e02",
+    "content-hash": "f0228e13cc25ab10665399eae36a5877",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -5816,16 +5816,16 @@
         },
         {
             "name": "symfony/security-bundle",
-            "version": "v5.4.40",
+            "version": "v5.4.41",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/security-bundle.git",
-                "reference": "d977faacbaf0e6e551443b3b6c14315be6e7fe57"
+                "reference": "86557f237fb152412048912660895ab86aa61494"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/security-bundle/zipball/d977faacbaf0e6e551443b3b6c14315be6e7fe57",
-                "reference": "d977faacbaf0e6e551443b3b6c14315be6e7fe57",
+                "url": "https://api.github.com/repos/symfony/security-bundle/zipball/86557f237fb152412048912660895ab86aa61494",
+                "reference": "86557f237fb152412048912660895ab86aa61494",
                 "shasum": ""
             },
             "require": {
@@ -5899,7 +5899,7 @@
             "description": "Provides a tight integration of the Security component into the Symfony full-stack framework",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/security-bundle/tree/v5.4.40"
+                "source": "https://github.com/symfony/security-bundle/tree/v5.4.41"
             },
             "funding": [
                 {
@@ -5915,7 +5915,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-05-31T14:33:22+00:00"
+            "time": "2024-06-21T13:58:36+00:00"
         },
         {
             "name": "symfony/security-core",
@@ -7323,6 +7323,82 @@
                 }
             ],
             "time": "2024-05-31T14:33:22+00:00"
+        },
+        {
+            "name": "symfony/webpack-encore-bundle",
+            "version": "v2.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/webpack-encore-bundle.git",
+                "reference": "5b932e0feddd81aaf0ecd7d5fcd2e450e5a7817e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/webpack-encore-bundle/zipball/5b932e0feddd81aaf0ecd7d5fcd2e450e5a7817e",
+                "reference": "5b932e0feddd81aaf0ecd7d5fcd2e450e5a7817e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1.0",
+                "symfony/asset": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/config": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/dependency-injection": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/http-kernel": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/service-contracts": "^1.1.9 || ^2.1.3 || ^3.0"
+            },
+            "require-dev": {
+                "symfony/framework-bundle": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/http-client": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/phpunit-bridge": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/twig-bundle": "^5.4 || ^6.2 || ^7.0 || ^8.0",
+                "symfony/web-link": "^5.4 || ^6.2 || ^7.0 || ^8.0"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/webpack-encore",
+                    "name": "symfony/webpack-encore"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\WebpackEncoreBundle\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Integration of your Symfony app with Webpack Encore",
+            "support": {
+                "issues": "https://github.com/symfony/webpack-encore-bundle/issues",
+                "source": "https://github.com/symfony/webpack-encore-bundle/tree/v2.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-11-27T13:41:46+00:00"
         },
         {
             "name": "symfony/yaml",
@@ -9371,16 +9447,16 @@
         },
         {
             "name": "symfony/debug-bundle",
-            "version": "v5.4.40",
+            "version": "v5.4.45",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/debug-bundle.git",
-                "reference": "177f79296705823eee0d7dd79773f3a9df884fe0"
+                "reference": "653c7629d036ef24ac5de54a157aecdc400d2570"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/debug-bundle/zipball/177f79296705823eee0d7dd79773f3a9df884fe0",
-                "reference": "177f79296705823eee0d7dd79773f3a9df884fe0",
+                "url": "https://api.github.com/repos/symfony/debug-bundle/zipball/653c7629d036ef24ac5de54a157aecdc400d2570",
+                "reference": "653c7629d036ef24ac5de54a157aecdc400d2570",
                 "shasum": ""
             },
             "require": {
@@ -9430,7 +9506,7 @@
             "description": "Provides a tight integration of the Symfony VarDumper component and the ServerLogCommand from MonologBridge into the Symfony full-stack framework",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/debug-bundle/tree/v5.4.40"
+                "source": "https://github.com/symfony/debug-bundle/tree/v5.4.45"
             },
             "funding": [
                 {
@@ -9446,7 +9522,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-05-31T14:33:22+00:00"
+            "time": "2024-09-25T14:11:13+00:00"
         },
         {
             "name": "symfony/dom-crawler",
@@ -9701,16 +9777,16 @@
         },
         {
             "name": "symfony/web-profiler-bundle",
-            "version": "v5.4.40",
+            "version": "v5.4.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/web-profiler-bundle.git",
-                "reference": "a29669617c4e63785f363571a190a706b9022890"
+                "reference": "4afb0399456b966be92410d2bbd6146cc3ce2174"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/web-profiler-bundle/zipball/a29669617c4e63785f363571a190a706b9022890",
-                "reference": "a29669617c4e63785f363571a190a706b9022890",
+                "url": "https://api.github.com/repos/symfony/web-profiler-bundle/zipball/4afb0399456b966be92410d2bbd6146cc3ce2174",
+                "reference": "4afb0399456b966be92410d2bbd6146cc3ce2174",
                 "shasum": ""
             },
             "require": {
@@ -9761,7 +9837,7 @@
             "description": "Provides a development tool that gives detailed information about the execution of any request",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/web-profiler-bundle/tree/v5.4.40"
+                "source": "https://github.com/symfony/web-profiler-bundle/tree/v5.4.48"
             },
             "funding": [
                 {
@@ -9777,7 +9853,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-05-31T14:33:22+00:00"
+            "time": "2024-11-19T09:26:40+00:00"
         },
         {
             "name": "theseer/tokenizer",
@@ -9832,7 +9908,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
@@ -9840,6 +9916,6 @@
         "ext-ctype": "*",
         "ext-iconv": "*"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }
