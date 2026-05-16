@@ -22,18 +22,21 @@ class CollectionCacheKey extends CacheKey
     public readonly array $ownerIdentifier;
 
     /**
+     * @param class-string         $entityClass     The owner entity class.
      * @param array<string, mixed> $ownerIdentifier The identifier of the owning entity.
-     * @param class-string         $entityClass     The owner entity class
      */
     public function __construct(
         public readonly string $entityClass,
         public readonly string $association,
         array $ownerIdentifier,
+        string $filterHash = '',
     ) {
         ksort($ownerIdentifier);
 
         $this->ownerIdentifier = $ownerIdentifier;
 
-        parent::__construct(str_replace('\\', '.', strtolower($entityClass)) . '_' . implode(' ', $ownerIdentifier) . '__' . $association);
+        $filterHash = $filterHash === '' ? '' : '_' . $filterHash;
+
+        parent::__construct(str_replace('\\', '.', strtolower($entityClass)) . '_' . implode(' ', $ownerIdentifier) . '__' . $association . $filterHash);
     }
 }

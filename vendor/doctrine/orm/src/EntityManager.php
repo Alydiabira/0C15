@@ -24,7 +24,6 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Repository\RepositoryFactory;
-use Throwable;
 
 use function array_keys;
 use function is_array;
@@ -44,7 +43,7 @@ use function method_exists;
  *
  *     $paths = ['/path/to/entity/mapping/files'];
  *
- *     $config = ORMSetup::createAttributeMetadataConfiguration($paths);
+ *     $config = ORMSetup::createAttributeMetadataConfig($paths);
  *     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
  *     $entityManager = new EntityManager($connection, $config);
  *
@@ -135,12 +134,16 @@ class EntityManager implements EntityManagerInterface
 
         $this->repositoryFactory = $config->getRepositoryFactory();
         $this->unitOfWork        = new UnitOfWork($this);
-        $this->proxyFactory      = new ProxyFactory(
-            $this,
-            $config->getProxyDir(),
-            $config->getProxyNamespace(),
-            $config->getAutoGenerateProxyClasses(),
-        );
+        if ($config->isNativeLazyObjectsEnabled()) {
+            $this->proxyFactory = new ProxyFactory($this);
+        } else {
+            $this->proxyFactory = new ProxyFactory(
+                $this,
+                $config->getProxyDir(),
+                $config->getProxyNamespace(),
+                $config->getAutoGenerateProxyClasses(),
+            );
+        }
 
         if ($config->isSecondLevelCacheEnabled()) {
             $cacheConfig  = $config->getSecondLevelCacheConfiguration();
@@ -178,18 +181,24 @@ class EntityManager implements EntityManagerInterface
     {
         $this->conn->beginTransaction();
 
+        $successful = false;
+
         try {
             $return = $func($this);
 
             $this->flush();
             $this->conn->commit();
 
-            return $return;
-        } catch (Throwable $e) {
-            $this->close();
-            $this->conn->rollBack();
+            $successful = true;
 
-            throw $e;
+            return $return;
+        } finally {
+            if (! $successful) {
+                $this->close();
+                if ($this->conn->isTransactionActive()) {
+                    $this->conn->rollBack();
+                }
+            }
         }
     }
 
@@ -479,9 +488,9 @@ class EntityManager implements EntityManagerInterface
     /**
      * Gets the repository for an entity class.
      *
-     * @psalm-param class-string<T> $className
+     * @param class-string<T> $className The name of the entity.
      *
-     * @psalm-return EntityRepository<T>
+     * @return EntityRepository<T> The repository class.
      *
      * @template T of object
      */
@@ -560,9 +569,9 @@ class EntityManager implements EntityManagerInterface
     /**
      * {@inheritDoc}
      */
-    public function isUninitializedObject($obj): bool
+    public function isUninitializedObject($value): bool
     {
-        return $this->unitOfWork->isUninitializedObject($obj);
+        return $this->unitOfWork->isUninitializedObject($value);
     }
 
     public function getFilters(): FilterCollection
@@ -581,7 +590,7 @@ class EntityManager implements EntityManagerInterface
     }
 
     /**
-     * @psalm-param LockMode::* $lockMode
+     * @phpstan-param LockMode::* $lockMode
      *
      * @throws OptimisticLockException
      * @throws TransactionRequiredException

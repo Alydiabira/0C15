@@ -32,7 +32,7 @@ abstract class AbstractLoader implements LoaderInterface
      */
     public const DEFAULT_NAMESPACE = '\\Symfony\\Component\\Validator\\Constraints\\';
 
-    protected $namespaces = [];
+    protected array $namespaces = [];
 
     /**
      * Adds a namespace alias.
@@ -44,7 +44,7 @@ abstract class AbstractLoader implements LoaderInterface
      *
      *     $constraint = $this->newConstraint('mynamespace:NotNull');
      */
-    protected function addNamespaceAlias(string $alias, string $namespace)
+    protected function addNamespaceAlias(string $alias, string $namespace): void
     {
         $this->namespaces[$alias] = $namespace;
     }
@@ -60,11 +60,9 @@ abstract class AbstractLoader implements LoaderInterface
      *                        {@link addNamespaceAlias()}.
      * @param mixed  $options The constraint options
      *
-     * @return Constraint
-     *
      * @throws MappingException If the namespace prefix is undefined
      */
-    protected function newConstraint(string $name, $options = null)
+    protected function newConstraint(string $name, mixed $options = null): Constraint
     {
         if (str_contains($name, '\\') && class_exists($name)) {
             $className = $name;
@@ -72,7 +70,7 @@ abstract class AbstractLoader implements LoaderInterface
             [$prefix, $className] = explode(':', $name, 2);
 
             if (!isset($this->namespaces[$prefix])) {
-                throw new MappingException(sprintf('Undefined namespace prefix "%s".', $prefix));
+                throw new MappingException(\sprintf('Undefined namespace prefix "%s".', $prefix));
             }
 
             $className = $this->namespaces[$prefix].$className;
@@ -80,6 +78,14 @@ abstract class AbstractLoader implements LoaderInterface
             $className = self::DEFAULT_NAMESPACE.$name;
         }
 
-        return new $className($options);
+        if (null === $options) {
+            return new $className();
+        }
+
+        if (!\is_array($options)) {
+            return new $className($options);
+        }
+
+        return new $className(...$options);
     }
 }

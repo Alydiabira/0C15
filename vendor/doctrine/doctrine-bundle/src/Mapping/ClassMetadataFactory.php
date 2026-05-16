@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Bundle\DoctrineBundle\Mapping;
 
 use Doctrine\ORM\Id\AbstractIdGenerator;
@@ -12,6 +14,9 @@ class ClassMetadataFactory extends BaseClassMetadataFactory
 {
     /**
      * {@inheritDoc}
+     *
+     * @param ClassMetadata<object> $class
+     * @param ClassMetadata<object> $parent
      */
     protected function doLoadMetadata($class, $parent, $rootEntityFound, array $nonSuperclassParents): void
     {
@@ -23,6 +28,7 @@ class ClassMetadataFactory extends BaseClassMetadataFactory
             return;
         }
 
+        /** @phpstan-ignore function.impossibleType, instanceof.alwaysFalse */
         assert($customGeneratorDefinition['instance'] instanceof AbstractIdGenerator);
 
         $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_CUSTOM);

@@ -11,7 +11,7 @@ use Doctrine\ORM\Query\AST\SelectStatement;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\ParserResult;
 use Doctrine\ORM\Query\ResultSetMapping;
-use Doctrine\ORM\Query\SqlWalker;
+use Doctrine\ORM\Query\SqlOutputWalker;
 use RuntimeException;
 
 use function array_diff;
@@ -35,9 +35,9 @@ use function sprintf;
  * are able to cache subqueries. By keeping the ORDER BY clause intact, the limitSubQuery
  * that will most likely be executed next can be read from the native SQL cache.
  *
- * @psalm-import-type QueryComponent from Parser
+ * @phpstan-import-type QueryComponent from Parser
  */
-class CountOutputWalker extends SqlWalker
+class CountOutputWalker extends SqlOutputWalker
 {
     private readonly AbstractPlatform $platform;
     private readonly ResultSetMapping $rsm;
@@ -53,13 +53,13 @@ class CountOutputWalker extends SqlWalker
         parent::__construct($query, $parserResult, $queryComponents);
     }
 
-    public function walkSelectStatement(SelectStatement $selectStatement): string
+    protected function createSqlForFinalizer(SelectStatement $selectStatement): string
     {
         if ($this->platform instanceof SQLServerPlatform) {
             $selectStatement->orderByClause = null;
         }
 
-        $sql = parent::walkSelectStatement($selectStatement);
+        $sql = parent::createSqlForFinalizer($selectStatement);
 
         if ($selectStatement->groupByClause) {
             return sprintf(

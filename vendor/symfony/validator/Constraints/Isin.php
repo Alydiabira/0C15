@@ -12,10 +12,12 @@
 namespace Symfony\Component\Validator\Constraints;
 
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
- * @Annotation
- * @Target({"PROPERTY", "METHOD", "ANNOTATION"})
+ * Validates that a value is a valid International Securities Identification Number (ISIN).
+ *
+ * @see https://en.wikipedia.org/wiki/International_Securities_Identification_Number
  *
  * @author Laurent Masforné <l.masforne@gmail.com>
  */
@@ -29,17 +31,24 @@ class Isin extends Constraint
     public const INVALID_PATTERN_ERROR = '3d08ce0-ded9-a93d-9216-17ac21265b65e';
     public const INVALID_CHECKSUM_ERROR = '32089b-0ee1-93ba-399e-aa232e62f2d29d';
 
-    protected static $errorNames = [
+    protected const ERROR_NAMES = [
         self::INVALID_LENGTH_ERROR => 'INVALID_LENGTH_ERROR',
         self::INVALID_PATTERN_ERROR => 'INVALID_PATTERN_ERROR',
         self::INVALID_CHECKSUM_ERROR => 'INVALID_CHECKSUM_ERROR',
     ];
 
-    public $message = 'This value is not a valid International Securities Identification Number (ISIN).';
+    public string $message = 'This value is not a valid International Securities Identification Number (ISIN).';
 
-    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, $payload = null)
+    /**
+     * @param string[]|null $groups
+     */
+    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, mixed $payload = null)
     {
-        parent::__construct($options, $groups, $payload);
+        if (null !== $options) {
+            throw new InvalidArgumentException(\sprintf('Passing an array of options to configure the "%s" constraint is no longer supported.', static::class));
+        }
+
+        parent::__construct(null, $groups, $payload);
 
         $this->message = $message ?? $this->message;
     }

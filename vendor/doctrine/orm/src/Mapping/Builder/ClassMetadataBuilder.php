@@ -109,7 +109,7 @@ class ClassMetadataBuilder
     /**
      * Adds Index.
      *
-     * @psalm-param list<string> $columns
+     * @phpstan-param list<string> $columns
      *
      * @return $this
      */
@@ -127,7 +127,7 @@ class ClassMetadataBuilder
     /**
      * Adds Unique Constraint.
      *
-     * @psalm-param list<string> $columns
+     * @phpstan-param list<string> $columns
      *
      * @return $this
      */
@@ -169,8 +169,8 @@ class ClassMetadataBuilder
     /**
      * Sets the discriminator column details.
      *
-     * @psalm-param class-string<BackedEnum>|null $enumType
-     * @psalm-param array<string, mixed> $options
+     * @param class-string<BackedEnum>|null $enumType
+     * @param array<string, mixed>          $options
      *
      * @return $this
      */
@@ -235,7 +235,7 @@ class ClassMetadataBuilder
     /**
      * Adds Field.
      *
-     * @psalm-param array<string, mixed> $mapping
+     * @phpstan-param array<string, mixed> $mapping
      *
      * @return $this
      */

@@ -12,10 +12,10 @@
 namespace Symfony\Component\Validator\Constraints;
 
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\MissingOptionsException;
 
 /**
- * @Annotation
- * @Target({"PROPERTY", "METHOD", "ANNOTATION"})
+ * Validates that a value is of a specific data type.
  *
  * @author Bernhard Schussek <bschussek@gmail.com>
  */
@@ -24,44 +24,26 @@ class Type extends Constraint
 {
     public const INVALID_TYPE_ERROR = 'ba785a8c-82cb-4283-967c-3cf342181b40';
 
-    protected static $errorNames = [
+    protected const ERROR_NAMES = [
         self::INVALID_TYPE_ERROR => 'INVALID_TYPE_ERROR',
     ];
 
-    public $message = 'This value should be of type {{ type }}.';
-    public $type;
+    public string $message = 'This value should be of type {{ type }}.';
+    public string|array|null $type = null;
 
     /**
-     * {@inheritdoc}
-     *
-     * @param string|array $type One ore multiple types to validate against or a set of options
+     * @param string|list<string>|null $type   The type(s) to enforce on the value
+     * @param string[]|null            $groups
      */
-    public function __construct($type, ?string $message = null, ?array $groups = null, $payload = null, array $options = [])
+    public function __construct(string|array|null $type, ?string $message = null, ?array $groups = null, mixed $payload = null)
     {
-        if (\is_array($type) && \is_string(key($type))) {
-            $options = array_merge($type, $options);
-        } elseif (null !== $type) {
-            $options['value'] = $type;
+        if (null === $type) {
+            throw new MissingOptionsException(\sprintf('The options "type" must be set for constraint "%s".', self::class), ['type']);
         }
 
-        parent::__construct($options, $groups, $payload);
+        parent::__construct(null, $groups, $payload);
 
         $this->message = $message ?? $this->message;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getDefaultOption()
-    {
-        return 'type';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getRequiredOptions()
-    {
-        return ['type'];
+        $this->type = $type;
     }
 }

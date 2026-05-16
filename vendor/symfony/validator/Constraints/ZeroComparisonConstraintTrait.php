@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\Validator\Constraints;
 
-use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
+use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
  * @internal
@@ -21,21 +21,13 @@ use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
  */
 trait ZeroComparisonConstraintTrait
 {
-    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, $payload = null)
+    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, mixed $payload = null)
     {
-        if (null === $options) {
-            $options = [];
+        if (null !== $options) {
+            throw new InvalidArgumentException(\sprintf('Passing an array of options to configure the "%s" constraint is no longer supported.', static::class));
         }
 
-        if (isset($options['propertyPath'])) {
-            throw new ConstraintDefinitionException(sprintf('The "propertyPath" option of the "%s" constraint cannot be set.', static::class));
-        }
-
-        if (isset($options['value'])) {
-            throw new ConstraintDefinitionException(sprintf('The "value" option of the "%s" constraint cannot be set.', static::class));
-        }
-
-        parent::__construct(0, null, $message, $groups, $payload, $options);
+        parent::__construct(0, null, $message, $groups, $payload);
     }
 
     public function validatedBy(): string

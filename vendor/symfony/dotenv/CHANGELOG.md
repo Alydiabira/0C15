@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+8.0
+---
+
+ * Remove `$defaultName` and `$defaultDescription` properties from `DebugCommand` command, configuration is done through the `#[AsCommand]` attribute
+
+7.1
+---
+
+ * Add `SYMFONY_DOTENV_PATH` variable with the path to the `.env` file loaded by `Dotenv::loadEnv()` or `Dotenv::bootEnv()`
+
+6.2
+---
+
+ * Add a new `filter` argument to `debug:dotenv` command to filter variable names
+
 5.4
 ---
 

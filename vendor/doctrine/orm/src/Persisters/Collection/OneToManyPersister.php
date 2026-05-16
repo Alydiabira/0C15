@@ -8,13 +8,18 @@ use BadMethodCallException;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\EntityNotFoundException;
+use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Utility\PersisterHelper;
 
+use function array_fill;
+use function array_keys;
 use function array_reverse;
 use function array_values;
 use function assert;
+use function count;
 use function implode;
 use function is_int;
 use function is_string;
@@ -84,7 +89,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
         // 'mappedBy' field.
-        $criteria = new Criteria(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
+        $criteria = Criteria::create(true)->where(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
 
         return $persister->count($criteria);
     }
@@ -113,7 +118,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
         // 'mappedBy' field.
-        $criteria = new Criteria();
+        $criteria = Criteria::create(true);
 
         $criteria->andWhere(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
         $criteria->andWhere(Criteria::expr()->eq($mapping->indexBy(), $key));
@@ -133,7 +138,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
         // 'mappedBy' field.
-        $criteria = new Criteria(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
+        $criteria = Criteria::create(true)->where(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
 
         return $persister->exists($element, $criteria);
     }
@@ -146,7 +151,11 @@ class OneToManyPersister extends AbstractCollectionPersister
         throw new BadMethodCallException('Filtering a collection by Criteria is not supported by this CollectionPersister.');
     }
 
-    /** @throws DBALException */
+    /**
+     * @throws DBALException
+     * @throws EntityNotFoundException
+     * @throws MappingException
+     */
     private function deleteEntityCollection(PersistentCollection $collection): int
     {
         $mapping     = $this->getMapping($collection);
@@ -165,6 +174,16 @@ class OneToManyPersister extends AbstractCollectionPersister
 
         $statement = 'DELETE FROM ' . $this->quoteStrategy->getTableName($targetClass, $this->platform)
             . ' WHERE ' . implode(' = ? AND ', $columns) . ' = ?';
+
+        if ($targetClass->isInheritanceTypeSingleTable()) {
+            $discriminatorColumn = $targetClass->getDiscriminatorColumn();
+            $discriminatorValues = $targetClass->discriminatorValue ? [$targetClass->discriminatorValue] : array_keys($targetClass->discriminatorMap);
+            $statement          .= ' AND ' . $discriminatorColumn->name . ' IN (' . implode(', ', array_fill(0, count($discriminatorValues), '?')) . ')';
+            foreach ($discriminatorValues as $discriminatorValue) {
+                $parameters[] = $discriminatorValue;
+                $types[]      = $discriminatorColumn->type;
+            }
+        }
 
         $numAffected = $this->conn->executeStatement($statement, $parameters, $types);
 

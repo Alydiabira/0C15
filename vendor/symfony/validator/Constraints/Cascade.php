@@ -12,30 +12,28 @@
 namespace Symfony\Component\Validator\Constraints;
 
 use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 
 /**
- * @Annotation
- * @Target({"CLASS"})
+ * Validates a whole class, including nested objects in properties.
  *
  * @author Jules Pietri <jules@heahprod.com>
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
 class Cascade extends Constraint
 {
-    public function __construct(?array $options = null)
-    {
-        if (\is_array($options) && \array_key_exists('groups', $options)) {
-            throw new ConstraintDefinitionException(sprintf('The option "groups" is not supported by the constraint "%s".', __CLASS__));
-        }
-
-        parent::__construct($options);
-    }
+    public array $exclude = [];
 
     /**
-     * {@inheritdoc}
+     * @param non-empty-string[]|non-empty-string|null $exclude Properties excluded from validation
      */
-    public function getTargets()
+    public function __construct(array|string|null $exclude = null)
+    {
+        parent::__construct();
+
+        $this->exclude = array_flip((array) $exclude);
+    }
+
+    public function getTargets(): string|array
     {
         return self::CLASS_CONSTRAINT;
     }

@@ -14,14 +14,18 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\Factory\DefaultChoiceListFactory;
 use Symfony\Component\Form\ChoiceList\Factory\PropertyAccessDecorator;
+use Symfony\Component\Form\EnumFormTypeGuesser;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TransformationFailureExtension;
 use Symfony\Component\Form\Extension\DependencyInjection\DependencyInjectionExtension;
+use Symfony\Component\Form\Extension\HtmlSanitizer\Type\TextTypeHtmlSanitizerExtension;
 use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationRequestHandler;
+use Symfony\Component\Form\Extension\HttpFoundation\Type\FormFlowTypeSessionDataStorageExtension;
 use Symfony\Component\Form\Extension\HttpFoundation\Type\FormTypeHttpFoundationExtension;
 use Symfony\Component\Form\Extension\Validator\Type\FormTypeValidatorExtension;
 use Symfony\Component\Form\Extension\Validator\Type\RepeatedTypeValidatorExtension;
@@ -59,9 +63,7 @@ return static function (ContainerConfigurator $container) {
         ->alias(FormRegistryInterface::class, 'form.registry')
 
         ->set('form.factory', FormFactory::class)
-            ->public()
             ->args([service('form.registry')])
-            ->tag('container.private', ['package' => 'symfony/framework-bundle', 'version' => '5.2'])
 
         ->alias(FormFactoryInterface::class, 'form.factory')
 
@@ -74,6 +76,9 @@ return static function (ContainerConfigurator $container) {
 
         ->set('form.type_guesser.validator', ValidatorTypeGuesser::class)
             ->args([service('validator.mapping.class_metadata_factory')])
+            ->tag('form.type_guesser')
+
+        ->set('form.type_guesser.enum_type', EnumFormTypeGuesser::class)
             ->tag('form.type_guesser')
 
         ->alias('form.property_accessor', 'property_accessor')
@@ -104,10 +109,8 @@ return static function (ContainerConfigurator $container) {
             ->tag('form.type')
 
         ->set('form.type.file', FileType::class)
-            ->public()
             ->args([service('translator')->ignoreOnInvalid()])
             ->tag('form.type')
-            ->tag('container.private', ['package' => 'symfony/framework-bundle', 'version' => '5.2'])
 
         ->set('form.type.color', ColorType::class)
             ->args([service('translator')->ignoreOnInvalid()])
@@ -117,8 +120,16 @@ return static function (ContainerConfigurator $container) {
             ->args([service('translator')->ignoreOnInvalid()])
             ->tag('form.type_extension', ['extended-type' => FormType::class])
 
+        ->set('form.type_extension.form.html_sanitizer', TextTypeHtmlSanitizerExtension::class)
+            ->args([tagged_locator('html_sanitizer', 'sanitizer')])
+            ->tag('form.type_extension', ['extended-type' => TextType::class])
+
         ->set('form.type_extension.form.http_foundation', FormTypeHttpFoundationExtension::class)
             ->args([service('form.type_extension.form.request_handler')])
+            ->tag('form.type_extension')
+
+        ->set('form.type_extension.form.flow.session_data_storage', FormFlowTypeSessionDataStorageExtension::class)
+            ->args([service('request_stack')->ignoreOnInvalid()])
             ->tag('form.type_extension')
 
         ->set('form.type_extension.form.request_handler', HttpFoundationRequestHandler::class)
@@ -130,7 +141,7 @@ return static function (ContainerConfigurator $container) {
         ->set('form.type_extension.form.validator', FormTypeValidatorExtension::class)
             ->args([
                 service('validator'),
-                true,
+                false,
                 service('twig.form.renderer')->ignoreOnInvalid(),
                 service('translator')->ignoreOnInvalid(),
             ])

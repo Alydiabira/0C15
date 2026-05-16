@@ -1,34 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Bundle\DoctrineBundle\Twig;
 
 use Doctrine\SqlFormatter\HtmlHighlighter;
 use Doctrine\SqlFormatter\NullHighlighter;
 use Doctrine\SqlFormatter\SqlFormatter;
+use Stringable;
 use Symfony\Component\VarDumper\Cloner\Data;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
 use function addslashes;
+use function array_filter;
 use function array_key_exists;
+use function array_keys;
+use function array_values;
+use function assert;
 use function bin2hex;
+use function count;
 use function implode;
 use function is_array;
 use function is_bool;
-use function is_object;
 use function is_string;
-use function method_exists;
 use function preg_match;
 use function preg_replace_callback;
-use function sprintf;
 use function strtoupper;
 use function substr;
-use function trigger_deprecation;
 
 /**
  * This class contains the needed functions in order to do the query highlighting
  *
- * @internal since 2.11
+ * @internal
  */
 class DoctrineExtension extends AbstractExtension
 {
@@ -39,10 +43,9 @@ class DoctrineExtension extends AbstractExtension
      *
      * @return TwigFilter[]
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         return [
-            new TwigFilter('doctrine_pretty_query', [$this, 'formatQuery'], ['is_safe' => ['html'], 'deprecated' => true]),
             new TwigFilter('doctrine_prettify_sql', [$this, 'prettifySql'], ['is_safe' => ['html']]),
             new TwigFilter('doctrine_format_sql', [$this, 'formatSql'], ['is_safe' => ['html']]),
             new TwigFilter('doctrine_replace_query_parameters', [$this, 'replaceQueryParameters']),
@@ -54,12 +57,8 @@ class DoctrineExtension extends AbstractExtension
      * DON'T USE THIS FUNCTION OUTSIDE ITS INTENDED SCOPE
      *
      * @internal
-     *
-     * @param mixed $parameter
-     *
-     * @return string
      */
-    public static function escapeFunction($parameter)
+    public static function escapeFunction(mixed $parameter): string|int|float
     {
         $result = $parameter;
 
@@ -81,8 +80,8 @@ class DoctrineExtension extends AbstractExtension
                 $result = implode(', ', $result) ?: 'NULL';
                 break;
 
-            case is_object($result) && method_exists($result, '__toString'):
-                $result = addslashes($result->__toString());
+            case $result instanceof Stringable:
+                $result = addslashes((string) $result);
                 break;
 
             case $result === null:
@@ -100,68 +99,39 @@ class DoctrineExtension extends AbstractExtension
     /**
      * Return a query with the parameters replaced
      *
-     * @param string       $query
-     * @param mixed[]|Data $parameters
-     *
-     * @return string
+     * @param array<array-key, mixed>|Data $parameters
      */
-    public function replaceQueryParameters($query, $parameters)
+    public function replaceQueryParameters(string $query, array|Data $parameters): string
     {
         if ($parameters instanceof Data) {
             $parameters = $parameters->getValue(true);
+            assert(is_array($parameters));
+        }
+
+        $keys = array_keys($parameters);
+
+        if (count(array_filter($keys, 'is_int')) === count($keys)) {
+            $parameters = array_values($parameters);
         }
 
         $i = 0;
 
-        if (! array_key_exists(0, $parameters) && array_key_exists(1, $parameters)) {
-            $i = 1;
-        }
-
         return preg_replace_callback(
-            '/\?|((?<!:):[a-z0-9_]+)/i',
-            static function ($matches) use ($parameters, &$i) {
+            '/(?<!\?)\?(?!\?)|(?<!:)(:[a-z0-9_]+)/i',
+            static function (array $matches) use ($parameters, &$i): string {
                 $key = substr($matches[0], 1);
 
-                if (! array_key_exists($i, $parameters) && ($key === false || ! array_key_exists($key, $parameters))) {
+                if (! array_key_exists($i, $parameters) && ! array_key_exists($key, $parameters)) {
                     return $matches[0];
                 }
 
-                $value  = array_key_exists($i, $parameters) ? $parameters[$i] : $parameters[$key];
-                $result = DoctrineExtension::escapeFunction($value);
+                $value = array_key_exists($i, $parameters) ? $parameters[$i] : $parameters[$key];
+
                 $i++;
 
-                return $result;
+                return (string) DoctrineExtension::escapeFunction($value);
             },
             $query,
-        );
-    }
-
-    /**
-     * Formats and/or highlights the given SQL statement.
-     *
-     * @param  string $sql
-     * @param  bool   $highlightOnly If true the query is not formatted, just highlighted
-     *
-     * @return string
-     */
-    public function formatQuery($sql, $highlightOnly = false)
-    {
-        trigger_deprecation(
-            'doctrine/doctrine-bundle',
-            '2.1',
-            'The "%s()" method is deprecated and will be removed in doctrine-bundle 3.0.',
-            __METHOD__,
-        );
-
-        $this->setUpSqlFormatter(true, true);
-
-        if ($highlightOnly) {
-            return $this->sqlFormatter->highlight($sql);
-        }
-
-        return sprintf(
-            '<div class="highlight highlight-sql"><pre>%s</pre></div>',
-            $this->sqlFormatter->format($sql),
         );
     }
 
@@ -179,7 +149,7 @@ class DoctrineExtension extends AbstractExtension
         return $this->sqlFormatter->format($sql);
     }
 
-    private function setUpSqlFormatter(bool $highlight = true, bool $legacy = false): void
+    private function setUpSqlFormatter(bool $highlight = true): void
     {
         $this->sqlFormatter = new SqlFormatter($highlight ? new HtmlHighlighter([
             HtmlHighlighter::HIGHLIGHT_PRE            => 'class="highlight highlight-sql"',
@@ -192,6 +162,6 @@ class DoctrineExtension extends AbstractExtension
             HtmlHighlighter::HIGHLIGHT_ERROR          => 'class="error"',
             HtmlHighlighter::HIGHLIGHT_COMMENT        => 'class="comment"',
             HtmlHighlighter::HIGHLIGHT_VARIABLE       => 'class="variable"',
-        ], ! $legacy) : new NullHighlighter());
+        ]) : new NullHighlighter());
     }
 }

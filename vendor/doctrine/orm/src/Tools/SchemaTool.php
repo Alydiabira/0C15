@@ -8,9 +8,22 @@ use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\ComparatorConfig;
+use Doctrine\DBAL\Schema\DefaultExpression;
+use Doctrine\DBAL\Schema\DefaultExpression\CurrentDate;
+use Doctrine\DBAL\Schema\DefaultExpression\CurrentTime;
+use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
+use Doctrine\DBAL\Schema\ForeignKeyConstraintEditor;
 use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Index\IndexedColumn;
+use Doctrine\DBAL\Schema\Name\Identifier;
+use Doctrine\DBAL\Schema\Name\UnqualifiedName;
+use Doctrine\DBAL\Schema\NamedObject;
+use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -31,12 +44,18 @@ use function array_diff_key;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
+use function array_map;
+use function array_values;
 use function assert;
+use function class_exists;
 use function count;
 use function current;
 use function implode;
 use function in_array;
+use function interface_exists;
 use function is_numeric;
+use function method_exists;
+use function preg_match;
 use function strtolower;
 
 /**
@@ -47,7 +66,7 @@ use function strtolower;
  */
 class SchemaTool
 {
-    private const KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default'];
+    private const KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
 
     private readonly AbstractPlatform $platform;
     private readonly QuoteStrategy $quoteStrategy;
@@ -67,7 +86,7 @@ class SchemaTool
     /**
      * Creates the database schema for the given array of ClassMetadata instances.
      *
-     * @psalm-param list<ClassMetadata> $classes
+     * @phpstan-param list<ClassMetadata> $classes
      *
      * @throws ToolsException
      */
@@ -89,7 +108,7 @@ class SchemaTool
      * Gets the list of DDL statements that are required to create the database schema for
      * the given list of ClassMetadata instances.
      *
-     * @psalm-param list<ClassMetadata> $classes
+     * @phpstan-param list<ClassMetadata> $classes
      *
      * @return list<string> The SQL statements needed to create the schema for the classes.
      */
@@ -103,7 +122,7 @@ class SchemaTool
     /**
      * Detects instances of ClassMetadata that don't need to be processed in the SchemaTool context.
      *
-     * @psalm-param array<string, bool> $processedClasses
+     * @phpstan-param array<string, bool> $processedClasses
      */
     private function processingNotRequired(
         ClassMetadata $class,
@@ -164,7 +183,7 @@ class SchemaTool
     /**
      * Creates a Schema instance from a given set of metadata classes.
      *
-     * @psalm-param list<ClassMetadata> $classes
+     * @phpstan-param list<ClassMetadata> $classes
      *
      * @throws NotSupported
      */
@@ -282,7 +301,7 @@ class SchemaTool
                     }
 
                     if ($pkColumns !== []) {
-                        $table->setPrimaryKey($pkColumns);
+                        self::addPrimaryKeyConstraint($table, $pkColumns);
                     }
                 }
             } else {
@@ -306,7 +325,7 @@ class SchemaTool
             }
 
             if (! $table->hasIndex('primary')) {
-                $table->setPrimaryKey($pkColumns);
+                self::addPrimaryKeyConstraint($table, $pkColumns);
             }
 
             // there can be unique indexes automatically created for join column
@@ -315,7 +334,7 @@ class SchemaTool
             $primaryKey = $table->getIndex('primary');
 
             foreach ($table->getIndexes() as $idxKey => $existingIndex) {
-                if ($primaryKey->overrules($existingIndex)) {
+                if ($existingIndex !== $primaryKey && $primaryKey->spansColumns(self::getIndexedColumns($existingIndex))) {
                     $table->dropIndex($idxKey);
                 }
             }
@@ -346,7 +365,7 @@ class SchemaTool
                         }
                     }
 
-                    $table->addUniqueIndex($uniqIndex->getColumns(), is_numeric($indexName) ? null : $indexName, $indexData['options'] ?? []);
+                    $table->addUniqueIndex(self::getIndexedColumns($uniqIndex), is_numeric($indexName) ? null : $indexName, $indexData['options'] ?? []);
                 }
             }
 
@@ -421,18 +440,12 @@ class SchemaTool
      */
     private function gatherColumns(ClassMetadata $class, Table $table): void
     {
-        $pkColumns = [];
-
         foreach ($class->fieldMappings as $mapping) {
             if ($class->isInheritanceTypeSingleTable() && isset($mapping->inherited)) {
                 continue;
             }
 
             $this->gatherColumn($class, $mapping, $table);
-
-            if ($class->isIdentifier($mapping->fieldName)) {
-                $pkColumns[] = $this->quoteStrategy->getColumnName($mapping->fieldName, $class, $this->platform);
-            }
         }
     }
 
@@ -440,7 +453,7 @@ class SchemaTool
      * Creates a column definition as required by the DBAL from an ORM field mapping definition.
      *
      * @param ClassMetadata $class The class that owns the field mapping.
-     * @psalm-param FieldMapping $mapping The field mapping.
+     * @phpstan-param FieldMapping $mapping The field mapping.
      */
     private function gatherColumn(
         ClassMetadata $class,
@@ -472,7 +485,9 @@ class SchemaTool
             $options['scale'] = $mapping->scale;
         }
 
+        /** @phpstan-ignore property.deprecated */
         if (isset($mapping->default)) {
+            /** @phpstan-ignore property.deprecated */
             $options['default'] = $mapping->default;
         }
 
@@ -482,6 +497,64 @@ class SchemaTool
 
         // the 'default' option can be overwritten here
         $options = $this->gatherColumnOptions($mapping) + $options;
+
+        if (isset($options['default']) && interface_exists(DefaultExpression::class)) {
+            if (
+                in_array($mapping->type, [
+                    Types::DATETIME_MUTABLE,
+                    Types::DATETIME_IMMUTABLE,
+                    Types::DATETIMETZ_MUTABLE,
+                    Types::DATETIMETZ_IMMUTABLE,
+                ], true)
+                && $options['default'] === $this->platform->getCurrentTimestampSQL()
+            ) {
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/issues/12252',
+                    <<<'DEPRECATION'
+                    Using "%s" as a default value for datetime fields is deprecated and
+                    will not be supported in Doctrine ORM 4.0.
+                    Pass a `Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp` instance instead.
+                    DEPRECATION,
+                    $this->platform->getCurrentTimestampSQL(),
+                );
+                $options['default'] = new CurrentTimestamp();
+            }
+
+            if (
+                in_array($mapping->type, [Types::TIME_MUTABLE, Types::TIME_IMMUTABLE], true)
+                && $options['default'] === $this->platform->getCurrentTimeSQL()
+            ) {
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/issues/12252',
+                    <<<'DEPRECATION'
+                    Using "%s" as a default value for time fields is deprecated and
+                    will not be supported in Doctrine ORM 4.0.
+                    Pass a `Doctrine\DBAL\Schema\DefaultExpression\CurrentTime` instance instead.
+                    DEPRECATION,
+                    $this->platform->getCurrentTimeSQL(),
+                );
+                $options['default'] = new CurrentTime();
+            }
+
+            if (
+                in_array($mapping->type, [Types::DATE_MUTABLE, Types::DATE_IMMUTABLE], true)
+                && $options['default'] === $this->platform->getCurrentDateSQL()
+            ) {
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/issues/12252',
+                    <<<'DEPRECATION'
+                    Using "%s" as a default value for date fields is deprecated and
+                    will not be supported in Doctrine ORM 4.0.
+                    Pass a `Doctrine\DBAL\Schema\DefaultExpression\CurrentDate` instance instead.
+                    DEPRECATION,
+                    $this->platform->getCurrentDateSQL(),
+                );
+                $options['default'] = new CurrentDate();
+            }
+        }
 
         if ($class->isIdGeneratorIdentity() && $class->getIdentifierFieldNames() === [$mapping->fieldName]) {
             $options['autoincrement'] = true;
@@ -502,17 +575,22 @@ class SchemaTool
         if ($isUnique) {
             $table->addUniqueIndex([$columnName]);
         }
+
+        $isIndex = $mapping->index ?? false;
+        if ($isIndex) {
+            $table->addIndex([$columnName]);
+        }
     }
 
     /**
      * Gathers the SQL for properly setting up the relations of the given class.
      * This includes the SQL for foreign key constraints and join tables.
      *
-     * @psalm-param array<string, array{
+     * @phpstan-param array<string, array{
      *                  foreignTableName: string,
      *                  foreignColumns: list<string>
      *              }>                               $addedFks
-     * @psalm-param array<string, bool>              $blacklistedFks
+     * @phpstan-param array<string, bool>              $blacklistedFks
      *
      * @throws NotSupported
      */
@@ -578,7 +656,7 @@ class SchemaTool
                     $blacklistedFks,
                 );
 
-                $theJoinTable->setPrimaryKey($primaryKeyColumns);
+                self::addPrimaryKeyConstraint($theJoinTable, $primaryKeyColumns);
             }
         }
     }
@@ -592,7 +670,7 @@ class SchemaTool
      *
      * TODO: Is there any way to make this code more pleasing?
      *
-     * @psalm-return array{ClassMetadata, string}|null
+     * @phpstan-return array{ClassMetadata, string}|null
      */
     private function getDefiningClass(ClassMetadata $class, string $referencedColumnName): array|null
     {
@@ -623,13 +701,13 @@ class SchemaTool
     /**
      * Gathers columns and fk constraints that are required for one part of relationship.
      *
-     * @psalm-param list<JoinColumnMapping>          $joinColumns
-     * @psalm-param list<string>                     $primaryKeyColumns
-     * @psalm-param array<string, array{
+     * @phpstan-param list<JoinColumnMapping>          $joinColumns
+     * @phpstan-param list<string>                     $primaryKeyColumns
+     * @phpstan-param array<string, array{
      *                  foreignTableName: string,
      *                  foreignColumns: list<string>
      *              }>                               $addedFks
-     * @psalm-param array<string,bool>               $blacklistedFks
+     * @phpstan-param array<string,bool>               $blacklistedFks
      *
      * @throws MissingColumnException
      */
@@ -715,6 +793,10 @@ class SchemaTool
             if (isset($joinColumn->onDelete)) {
                 $fkOptions['onDelete'] = $joinColumn->onDelete;
             }
+
+            if (isset($joinColumn->deferrable)) {
+                $fkOptions['deferrable'] = $joinColumn->deferrable;
+            }
         }
 
         // Prefer unique constraints over implicit simple indexes created for foreign keys.
@@ -723,7 +805,7 @@ class SchemaTool
             $theJoinTable->addUniqueIndex($unique['columns'], is_numeric($indexName) ? null : $indexName);
         }
 
-        $compositeName = $theJoinTable->getName() . '.' . implode('', $localColumns);
+        $compositeName = $this->getAssetName($theJoinTable) . '.' . implode('', $localColumns);
         if (
             isset($addedFks[$compositeName])
             && ($foreignTableName !== $addedFks[$compositeName]['foreignTableName']
@@ -731,7 +813,18 @@ class SchemaTool
         ) {
             foreach ($theJoinTable->getForeignKeys() as $fkName => $key) {
                 if (
-                    count(array_diff($key->getLocalColumns(), $localColumns)) === 0
+                    class_exists(ForeignKeyConstraintEditor::class)
+                    && count(array_diff(array_map(static fn (UnqualifiedName $name) => $name->toString(), $key->getReferencingColumnNames()), $localColumns)) === 0
+                    && (($key->getReferencedTableName()->toString() !== $foreignTableName)
+                    || 0 < count(array_diff(array_map(static fn (UnqualifiedName $name) => $name->toString(), $key->getReferencedColumnNames()), $foreignColumns)))
+                ) {
+                    $theJoinTable->dropForeignKey($fkName);
+                    break;
+                }
+
+                if (
+                    ! class_exists(ForeignKeyConstraintEditor::class)
+                    && count(array_diff($key->getLocalColumns(), $localColumns)) === 0
                     && (($key->getForeignTableName() !== $foreignTableName)
                     || 0 < count(array_diff($key->getForeignColumns(), $foreignColumns)))
                 ) {
@@ -781,7 +874,7 @@ class SchemaTool
      * In any way when an exception is thrown it is suppressed since drop was
      * issued for all classes of the schema and some probably just don't exist.
      *
-     * @psalm-param list<ClassMetadata> $classes
+     * @phpstan-param list<ClassMetadata> $classes
      */
     public function dropSchema(array $classes): void
     {
@@ -825,7 +918,7 @@ class SchemaTool
     /**
      * Gets SQL to drop the tables defined by the passed classes.
      *
-     * @psalm-param list<ClassMetadata> $classes
+     * @phpstan-param list<ClassMetadata> $classes
      *
      * @return list<string>
      */
@@ -836,27 +929,37 @@ class SchemaTool
         $deployedSchema = $this->schemaManager->introspectSchema();
 
         foreach ($schema->getTables() as $table) {
-            if (! $deployedSchema->hasTable($table->getName())) {
-                $schema->dropTable($table->getName());
+            if (! $deployedSchema->hasTable($this->getAssetName($table))) {
+                $schema->dropTable($this->getAssetName($table));
             }
         }
 
         if ($this->platform->supportsSequences()) {
             foreach ($schema->getSequences() as $sequence) {
-                if (! $deployedSchema->hasSequence($sequence->getName())) {
-                    $schema->dropSequence($sequence->getName());
+                if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
+                    $schema->dropSequence($this->getAssetName($sequence));
                 }
             }
 
             foreach ($schema->getTables() as $table) {
-                $primaryKey = $table->getPrimaryKey();
+                if (method_exists($table, 'getPrimaryKeyConstraint')) {
+                    $primaryKey = $table->getPrimaryKeyConstraint();
+                } else {
+                    $primaryKey = $table->getPrimaryKey();
+                }
+
                 if ($primaryKey === null) {
                     continue;
                 }
 
-                $columns = $primaryKey->getColumns();
+                if ($primaryKey instanceof PrimaryKeyConstraint) {
+                    $columns = array_map(static fn (UnqualifiedName $name) => $name->toString(), $primaryKey->getColumnNames());
+                } else {
+                    $columns = self::getIndexedColumns($primaryKey);
+                }
+
                 if (count($columns) === 1) {
-                    $checkSequence = $table->getName() . '_' . $columns[0] . '_seq';
+                    $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
                     if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
                         $schema->createSequence($checkSequence);
                     }
@@ -894,7 +997,13 @@ class SchemaTool
     {
         $toSchema   = $this->getSchemaFromMetadata($classes);
         $fromSchema = $this->createSchemaForComparison($toSchema);
-        $comparator = $this->schemaManager->createComparator();
+
+        if (class_exists(ComparatorConfig::class)) {
+            $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
+        } else {
+            $comparator = $this->schemaManager->createComparator();
+        }
+
         $schemaDiff = $comparator->compareSchemas($fromSchema, $toSchema);
 
         return $this->platform->getAlterSchemaSQL($schemaDiff);
@@ -916,8 +1025,9 @@ class SchemaTool
         }
 
         // whitelist assets we already know about in $toSchema, use the existing filter otherwise
-        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema): bool {
-            $assetName = $asset instanceof AbstractAsset ? $asset->getName() : $asset;
+        $getAssetName = $this->getAssetName(...);
+        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName): bool {
+            $assetName = $asset instanceof AbstractAsset ? $getAssetName($asset) : $asset;
 
             return $toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName) || $previousFilter($asset);
         });
@@ -928,5 +1038,45 @@ class SchemaTool
             // restore schema assets filter
             $config->setSchemaAssetsFilter($previousFilter);
         }
+    }
+
+    /** @param non-empty-array<non-empty-string> $primaryKeyColumns */
+    private function addPrimaryKeyConstraint(Table $table, array $primaryKeyColumns): void
+    {
+        if (! class_exists(PrimaryKeyConstraint::class)) {
+            $table->setPrimaryKey(array_values($primaryKeyColumns));
+
+            return;
+        }
+
+        $primaryKeyColumnNames = [];
+
+        foreach ($primaryKeyColumns as $primaryKeyColumn) {
+            if (preg_match('/^"(.+)"$/', $primaryKeyColumn, $matches) === 1) {
+                $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::quoted($matches[1]));
+            } else {
+                $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::unquoted($primaryKeyColumn));
+            }
+        }
+
+        $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, $primaryKeyColumnNames, true));
+    }
+
+    /** @return string[] */
+    private static function getIndexedColumns(Index $index): array
+    {
+        if (method_exists(Index::class, 'getIndexedColumns')) {
+            return array_map(static fn (IndexedColumn $indexedColumn) => $indexedColumn->getColumnName()->toString(), $index->getIndexedColumns());
+        }
+
+        return $index->getColumns();
+    }
+
+    private function getAssetName(AbstractAsset $asset): string
+    {
+        return $asset instanceof NamedObject
+            ? $asset->getObjectName()->toString()
+            // @phpstan-ignore method.deprecated (DBAL < 4.4)
+            : $asset->getName();
     }
 }

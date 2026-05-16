@@ -21,9 +21,6 @@ use Symfony\Component\Routing\Matcher\RedirectableUrlMatcherInterface;
  */
 class RedirectableCompiledUrlMatcher extends CompiledUrlMatcher implements RedirectableUrlMatcherInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function redirect(string $path, string $route, ?string $scheme = null): array
     {
         return [
@@ -34,6 +31,7 @@ class RedirectableCompiledUrlMatcher extends CompiledUrlMatcher implements Redir
             'httpPort' => $this->context->getHttpPort(),
             'httpsPort' => $this->context->getHttpsPort(),
             '_route' => $route,
+            '_route_mapping' => [],
         ];
     }
 }

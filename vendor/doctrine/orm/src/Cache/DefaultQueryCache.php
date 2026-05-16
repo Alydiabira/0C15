@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
+use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\UnitOfWork;
 
 use function array_map;
@@ -210,6 +211,10 @@ class DefaultQueryCache implements QueryCache
             throw FeatureNotImplemented::nonSelectStatements();
         }
 
+        if (($hints[SqlWalker::HINT_PARTIAL] ?? false) === true || ($hints[Query::HINT_FORCE_PARTIAL_LOAD] ?? false) === true) {
+            throw FeatureNotImplemented::partialEntities();
+        }
+
         if (! ($key->cacheMode & Cache::MODE_PUT)) {
             return false;
         }
@@ -226,7 +231,6 @@ class DefaultQueryCache implements QueryCache
         $region = $persister->getCacheRegion();
 
         $cm = $this->em->getClassMetadata($entityName);
-        assert($cm instanceof ClassMetadata);
 
         foreach ($result as $index => $entity) {
             $identifier = $this->uow->getEntityIdentifier($entity);
@@ -292,7 +296,7 @@ class DefaultQueryCache implements QueryCache
 
     /**
      * @return mixed[]|null
-     * @psalm-return array{targetEntity: class-string, type: mixed, list?: array[], identifier?: array}|null
+     * @phpstan-return array{targetEntity: class-string, type: mixed, list?: array[], identifier?: array}|null
      */
     private function storeAssociationCache(QueryCacheKey $key, AssociationMapping $assoc, mixed $assocValue): array|null
     {
@@ -343,7 +347,7 @@ class DefaultQueryCache implements QueryCache
         ];
     }
 
-    /** @psalm-return list<mixed>|object|null */
+    /** @phpstan-return list<mixed>|object|null */
     private function getAssociationValue(
         ResultSetMapping $rsm,
         string $assocAlias,
@@ -369,9 +373,9 @@ class DefaultQueryCache implements QueryCache
     }
 
     /**
-     * @psalm-param array<array-key, array{field: string, class: string}> $path
+     * @phpstan-param array<array-key, array{field: string, class: string}> $path
      *
-     * @psalm-return list<mixed>|object|null
+     * @phpstan-return list<mixed>|object|null
      */
     private function getAssociationPathValue(mixed $value, array $path): array|object|null
     {

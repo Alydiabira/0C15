@@ -1,5 +1,36 @@
 # Upgrade
 
+## 4.0.0
+
+## Dependencies
+
+- Support for PHP < 8.4 has been dropped.
+- Support for `doctrine/orm` < 3 has been dropped.
+- Support for `doctrine/doctrine-bundle` < 3 has been dropped.
+
+## BC break: final, internal classes
+
+Some classes have been marked as `final` and `@internal` because they are not
+supposed to be extended or even referenced outside of the bundle.
+
+### BC break: type declarations
+
+Type declarations have been added to all method signatures and properties. You
+might have to adjust your own code to abide by the new type declarations.
+
+## BC break: Removed support for container-aware migrations
+
+* Migrations that implement `ContainerAwareInterface` will no longer have the container injected automatically.
+* The `ContainerAwareMigrationFactory` class has been removed.
+
+## Upgrade to 3.5
+
+## Final classes
+
+Some classes have been marked as `@final` because they are not supposed to be
+extended. They will be `final`, and most of them will be marked with
+`@internal` in 4.0.0.
+
 ## From 2.x to 3.0.0
 
 - The configuration for the migration namespace and directory changed as follows:
@@ -79,8 +110,8 @@ doctrine_migrations:
 ### Underlying doctrine/migrations library
 
 Upgrading this bundle to `3.0` will also update the `doctrine/migrations` library to the version `3.0`.
-Backward incompatible changes in `doctrine/migrations` 3.0 
-are documented in the dedicated [UPGRADE](https://github.com/doctrine/migrations/blob/3.0.x/UPGRADE.md) document. 
+Backward incompatible changes in `doctrine/migrations` 3.0
+are documented in the dedicated [UPGRADE](https://github.com/doctrine/migrations/blob/3.0.x/UPGRADE.md) document.
 
 - The container is not automatically injected anymore when a migration implements `ContainerAwareInterface`. Custom
 migration factories should be used to inject additional dependencies into migrations.

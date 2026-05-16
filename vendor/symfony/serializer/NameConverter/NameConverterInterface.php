@@ -21,14 +21,16 @@ interface NameConverterInterface
     /**
      * Converts a property name to its normalized value.
      *
-     * @return string
+     * @param class-string|null    $class
+     * @param array<string, mixed> $context
      */
-    public function normalize(string $propertyName);
+    public function normalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string;
 
     /**
      * Converts a property name to its denormalized value.
      *
-     * @return string
+     * @param class-string|null    $class
+     * @param array<string, mixed> $context
      */
-    public function denormalize(string $propertyName);
+    public function denormalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string;
 }

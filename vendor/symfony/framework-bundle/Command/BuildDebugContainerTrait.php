@@ -12,10 +12,7 @@
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
 use Symfony\Component\Config\ConfigCache;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -26,7 +23,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 trait BuildDebugContainerTrait
 {
-    protected $containerBuilder;
+    protected ContainerBuilder $container;
 
     /**
      * Loads the ContainerBuilder from the cache.
@@ -35,16 +32,18 @@ trait BuildDebugContainerTrait
      */
     protected function getContainerBuilder(KernelInterface $kernel): ContainerBuilder
     {
-        if ($this->containerBuilder) {
-            return $this->containerBuilder;
+        if (isset($this->container)) {
+            return $this->container;
         }
 
-        if (!$kernel->isDebug() || !(new ConfigCache($kernel->getContainer()->getParameter('debug.container.dump'), true))->isFresh()) {
+        $file = $kernel->isDebug() ? $kernel->getContainer()->getParameter('debug.container.dump') : false;
+
+        if (!$file || !(new ConfigCache($file, true))->isFresh()) {
             $buildContainer = \Closure::bind(function () {
                 $this->initializeBundles();
 
                 return $this->buildContainer();
-            }, $kernel, \get_class($kernel));
+            }, $kernel, $kernel::class);
             $container = $buildContainer();
             $container->getCompilerPassConfig()->setRemovingPasses([]);
             $container->getCompilerPassConfig()->setAfterRemovingPasses([]);
@@ -55,17 +54,18 @@ trait BuildDebugContainerTrait
                 $this->prepareContainer($containerBuilder);
 
                 return $containerBuilder;
-            }, $kernel, \get_class($kernel));
+            }, $kernel, $kernel::class);
             $container = $buildContainer();
-            (new XmlFileLoader($container, new FileLocator()))->load($kernel->getContainer()->getParameter('debug.container.dump'));
-            $locatorPass = new ServiceLocatorTagPass();
-            $locatorPass->process($container);
 
-            $container->getCompilerPassConfig()->setBeforeOptimizationPasses([]);
-            $container->getCompilerPassConfig()->setOptimizationPasses([]);
-            $container->getCompilerPassConfig()->setBeforeRemovingPasses([]);
+            $dumpedContainer = unserialize(file_get_contents(substr_replace($file, '.ser', -4)));
+            $container->setDefinitions($dumpedContainer->getDefinitions());
+            $container->setAliases($dumpedContainer->getAliases());
+
+            $parameterBag = $container->getParameterBag();
+            $parameterBag->clear();
+            $parameterBag->add($dumpedContainer->getParameterBag()->all());
         }
 
-        return $this->containerBuilder = $container;
+        return $this->container = $container;
     }
 }

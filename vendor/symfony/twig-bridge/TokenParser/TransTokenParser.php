@@ -27,9 +27,6 @@ use Twig\TokenParser\AbstractTokenParser;
  */
 final class TransTokenParser extends AbstractTokenParser
 {
-    /**
-     * {@inheritdoc}
-     */
     public function parse(Token $token): Node
     {
         $lineno = $token->getLine();
@@ -39,29 +36,30 @@ final class TransTokenParser extends AbstractTokenParser
         $vars = new ArrayExpression([], $lineno);
         $domain = null;
         $locale = null;
+
         if (!$stream->test(Token::BLOCK_END_TYPE)) {
             if ($stream->test('count')) {
                 // {% trans count 5 %}
                 $stream->next();
-                $count = $this->parser->getExpressionParser()->parseExpression();
+                $count = $this->parser->parseExpression();
             }
 
             if ($stream->test('with')) {
                 // {% trans with vars %}
                 $stream->next();
-                $vars = $this->parser->getExpressionParser()->parseExpression();
+                $vars = $this->parser->parseExpression();
             }
 
             if ($stream->test('from')) {
                 // {% trans from "messages" %}
                 $stream->next();
-                $domain = $this->parser->getExpressionParser()->parseExpression();
+                $domain = $this->parser->parseExpression();
             }
 
             if ($stream->test('into')) {
                 // {% trans into "fr" %}
                 $stream->next();
-                $locale = $this->parser->getExpressionParser()->parseExpression();
+                $locale = $this->parser->parseExpression();
             } elseif (!$stream->test(Token::BLOCK_END_TYPE)) {
                 throw new SyntaxError('Unexpected token. Twig was looking for the "with", "from", or "into" keyword.', $stream->getCurrent()->getLine(), $stream->getSourceContext());
             }
@@ -69,7 +67,7 @@ final class TransTokenParser extends AbstractTokenParser
 
         // {% trans %}message{% endtrans %}
         $stream->expect(Token::BLOCK_END_TYPE);
-        $body = $this->parser->subparse([$this, 'decideTransFork'], true);
+        $body = $this->parser->subparse($this->decideTransFork(...), true);
 
         if (!$body instanceof TextNode && !$body instanceof AbstractExpression) {
             throw new SyntaxError('A message inside a trans tag must be a simple text.', $body->getTemplateLine(), $stream->getSourceContext());
@@ -77,7 +75,7 @@ final class TransTokenParser extends AbstractTokenParser
 
         $stream->expect(Token::BLOCK_END_TYPE);
 
-        return new TransNode($body, $domain, $count, $vars, $locale, $lineno, $this->getTag());
+        return new TransNode($body, $domain, $count, $vars, $locale, $lineno);
     }
 
     public function decideTransFork(Token $token): bool
@@ -85,9 +83,6 @@ final class TransTokenParser extends AbstractTokenParser
         return $token->test(['endtrans']);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getTag(): string
     {
         return 'trans';

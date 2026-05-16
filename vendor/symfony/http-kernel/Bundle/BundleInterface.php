@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\HttpKernel\Bundle;
 
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 /**
@@ -20,52 +20,46 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-interface BundleInterface extends ContainerAwareInterface
+interface BundleInterface
 {
     /**
      * Boots the Bundle.
      */
-    public function boot();
+    public function boot(): void;
 
     /**
      * Shutdowns the Bundle.
      */
-    public function shutdown();
+    public function shutdown(): void;
 
     /**
      * Builds the bundle.
      *
      * It is only ever called once when the cache is empty.
      */
-    public function build(ContainerBuilder $container);
+    public function build(ContainerBuilder $container): void;
 
     /**
      * Returns the container extension that should be implicitly loaded.
-     *
-     * @return ExtensionInterface|null
      */
-    public function getContainerExtension();
+    public function getContainerExtension(): ?ExtensionInterface;
 
     /**
      * Returns the bundle name (the class short name).
-     *
-     * @return string
      */
-    public function getName();
+    public function getName(): string;
 
     /**
      * Gets the Bundle namespace.
-     *
-     * @return string
      */
-    public function getNamespace();
+    public function getNamespace(): string;
 
     /**
      * Gets the Bundle directory path.
      *
      * The path should always be returned as a Unix path (with /).
-     *
-     * @return string
      */
-    public function getPath();
+    public function getPath(): string;
+
+    public function setContainer(?ContainerInterface $container): void;
 }

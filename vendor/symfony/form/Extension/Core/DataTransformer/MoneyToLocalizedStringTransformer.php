@@ -21,28 +21,24 @@ use Symfony\Component\Form\Exception\TransformationFailedException;
  */
 class MoneyToLocalizedStringTransformer extends NumberToLocalizedStringTransformer
 {
-    private $divisor;
+    private int $divisor;
 
-    public function __construct(?int $scale = 2, ?bool $grouping = true, ?int $roundingMode = \NumberFormatter::ROUND_HALFUP, ?int $divisor = 1, ?string $locale = null)
-    {
+    public function __construct(
+        ?int $scale = 2,
+        ?bool $grouping = true,
+        ?int $roundingMode = \NumberFormatter::ROUND_HALFUP,
+        ?int $divisor = 1,
+        ?string $locale = null,
+        private readonly string $input = 'float',
+    ) {
         parent::__construct($scale ?? 2, $grouping ?? true, $roundingMode, $locale);
 
         $this->divisor = $divisor ?? 1;
     }
 
-    /**
-     * Transforms a normalized format into a localized money string.
-     *
-     * @param int|float|null $value Normalized number
-     *
-     * @return string
-     *
-     * @throws TransformationFailedException if the given value is not numeric or
-     *                                       if the value cannot be transformed
-     */
-    public function transform($value)
+    public function transform(mixed $value): string
     {
-        if (null !== $value && 1 !== $this->divisor) {
+        if (null !== $value && '' !== $value && 1 !== $this->divisor) {
             if (!is_numeric($value)) {
                 throw new TransformationFailedException('Expected a numeric.');
             }
@@ -52,21 +48,21 @@ class MoneyToLocalizedStringTransformer extends NumberToLocalizedStringTransform
         return parent::transform($value);
     }
 
-    /**
-     * Transforms a localized money string into a normalized format.
-     *
-     * @param string $value Localized money string
-     *
-     * @return int|float|null
-     *
-     * @throws TransformationFailedException if the given value is not a string
-     *                                       or if the value cannot be transformed
-     */
-    public function reverseTransform($value)
+    public function reverseTransform(mixed $value): int|float|null
     {
         $value = parent::reverseTransform($value);
-        if (null !== $value && 1 !== $this->divisor) {
-            $value = (float) (string) ($value * $this->divisor);
+        if (null !== $value) {
+            $value = (string) ($value * $this->divisor);
+
+            if ('integer' !== $this->input) {
+                return (float) $value;
+            }
+
+            if ($value > \PHP_INT_MAX || $value < \PHP_INT_MIN) {
+                throw new TransformationFailedException(\sprintf('Cannot cast "%s" to an integer. Try setting the input to "float" instead.', $value));
+            }
+
+            $value = (int) $value;
         }
 
         return $value;

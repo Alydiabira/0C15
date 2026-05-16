@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Bundle\DoctrineBundle\Controller;
 
 use Doctrine\DBAL\Connection;
@@ -20,27 +22,21 @@ use function assert;
 /** @internal */
 class ProfilerController
 {
-    private Environment $twig;
-    private ConnectionRegistry $registry;
-    private Profiler $profiler;
-
-    public function __construct(Environment $twig, ConnectionRegistry $registry, Profiler $profiler)
-    {
-        $this->twig     = $twig;
-        $this->registry = $registry;
-        $this->profiler = $profiler;
+    public function __construct(
+        private readonly Environment $twig,
+        private readonly ConnectionRegistry $registry,
+        private readonly Profiler $profiler,
+    ) {
     }
 
     /**
      * Renders the profiler panel for the given token.
      *
-     * @param string $token          The profiler token
-     * @param string $connectionName
-     * @param int    $query
+     * @param string $token The profiler token
      *
      * @return Response A Response instance
      */
-    public function explainAction($token, $connectionName, $query)
+    public function explainAction(string $token, string $connectionName, int $query): Response
     {
         $this->profiler->disable();
 
@@ -73,7 +69,7 @@ class ProfilerController
             } else {
                 $results = $this->explainOtherPlatform($connection, $query);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return new Response('This query cannot be explained.');
         }
 

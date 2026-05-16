@@ -7,11 +7,14 @@ namespace Doctrine\ORM;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\AST\DeleteStatement;
 use Doctrine\ORM\Query\AST\SelectStatement;
 use Doctrine\ORM\Query\AST\UpdateStatement;
 use Doctrine\ORM\Query\Exec\AbstractSqlExecutor;
+use Doctrine\ORM\Query\Exec\SqlFinalizer;
+use Doctrine\ORM\Query\OutputWalker;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\ParameterTypeInferer;
 use Doctrine\ORM\Query\Parser;
@@ -27,6 +30,7 @@ use function assert;
 use function count;
 use function get_debug_type;
 use function in_array;
+use function is_a;
 use function ksort;
 use function md5;
 use function reset;
@@ -71,6 +75,14 @@ class Query extends AbstractQuery
     public const HINT_REFRESH_ENTITY = 'doctrine.refresh.entity';
 
     /**
+     * The forcePartialLoad query hint forces a particular query to return
+     * partial objects.
+     *
+     * @todo Rename: HINT_OPTIMIZE
+     */
+    public const HINT_FORCE_PARTIAL_LOAD = 'doctrine.forcePartialLoad';
+
+    /**
      * The includeMetaColumns query hint causes meta columns like foreign keys and
      * discriminator columns to be selected and returned as part of the query result.
      *
@@ -105,7 +117,7 @@ class Query extends AbstractQuery
     /**
      * The current state of this query.
      *
-     * @psalm-var self::STATE_*
+     * @phpstan-var self::STATE_*
      */
     private int $state = self::STATE_DIRTY;
 
@@ -163,7 +175,7 @@ class Query extends AbstractQuery
      */
     public function getSQL(): string|array
     {
-        return $this->parse()->getSqlExecutor()->getSqlStatements();
+        return $this->getSqlExecutor()->getSqlStatements();
     }
 
     /**
@@ -242,7 +254,7 @@ class Query extends AbstractQuery
 
     protected function _doExecute(): Result|int
     {
-        $executor = $this->parse()->getSqlExecutor();
+        $executor = $this->getSqlExecutor();
 
         if ($this->queryCacheProfile) {
             $executor->setQueryCacheProfile($this->queryCacheProfile);
@@ -335,7 +347,7 @@ class Query extends AbstractQuery
      * @param array<list<int>> $paramMappings
      *
      * @return mixed[][]
-     * @psalm-return array{0: list<mixed>, 1: array}
+     * @phpstan-return array{0: list<mixed>, 1: array}
      *
      * @throws Query\QueryException
      */
@@ -386,7 +398,7 @@ class Query extends AbstractQuery
 
     /**
      * @return mixed[] tuple of (value, type)
-     * @psalm-return array{0: mixed, 1: mixed}
+     * @phpstan-return array{0: mixed, 1: mixed}
      */
     private function resolveParameterValue(Parameter $parameter): array
     {
@@ -519,7 +531,7 @@ class Query extends AbstractQuery
      * @see AbstractQuery::STATE_DIRTY
      *
      * @return int The query state.
-     * @psalm-return self::STATE_* The query state.
+     * @phpstan-return self::STATE_* The query state.
      */
     public function getState(): int
     {
@@ -613,7 +625,7 @@ class Query extends AbstractQuery
      *
      * @see \Doctrine\DBAL\LockMode
      *
-     * @psalm-param LockMode::* $lockMode
+     * @phpstan-param LockMode::* $lockMode
      *
      * @return $this
      *
@@ -636,7 +648,7 @@ class Query extends AbstractQuery
      * Get the current lock mode for this query.
      *
      * @return LockMode|int|null The current lock mode of this query or NULL if no specific lock mode is set.
-     * @psalm-return LockMode::*|null
+     * @phpstan-return LockMode::*|null
      */
     public function getLockMode(): LockMode|int|null
     {
@@ -656,11 +668,31 @@ class Query extends AbstractQuery
     {
         ksort($this->hints);
 
+        if (! $this->hasHint(self::HINT_CUSTOM_OUTPUT_WALKER)) {
+            // Assume Parser will create the SqlOutputWalker; save is_a call, which might trigger a class load
+            $firstAndMaxResult = '';
+        } else {
+            $outputWalkerClass = $this->getHint(self::HINT_CUSTOM_OUTPUT_WALKER);
+            if (is_a($outputWalkerClass, OutputWalker::class, true)) {
+                $firstAndMaxResult = '';
+            } else {
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/pull/11188/',
+                    'Your output walker class %s should implement %s in order to provide a %s. This also means the output walker should not use the query firstResult/maxResult values, which should be read from the query by the SqlFinalizer only.',
+                    $outputWalkerClass,
+                    OutputWalker::class,
+                    SqlFinalizer::class,
+                );
+                $firstAndMaxResult = '&firstResult=' . $this->firstResult . '&maxResult=' . $this->maxResults;
+            }
+        }
+
         return md5(
             $this->getDQL() . serialize($this->hints) .
             '&platform=' . get_debug_type($this->getEntityManager()->getConnection()->getDatabasePlatform()) .
             ($this->em->hasFilters() ? $this->em->getFilters()->getHash() : '') .
-            '&firstResult=' . $this->firstResult . '&maxResult=' . $this->maxResults .
+            $firstAndMaxResult .
             '&hydrationMode=' . $this->hydrationMode . '&types=' . serialize($this->parsedTypes) . 'DOCTRINE_QUERY_CACHE_SALT',
         );
     }
@@ -678,5 +710,10 @@ class Query extends AbstractQuery
         parent::__clone();
 
         $this->state = self::STATE_DIRTY;
+    }
+
+    private function getSqlExecutor(): AbstractSqlExecutor
+    {
+        return $this->parse()->prepareSqlExecutor($this);
     }
 }

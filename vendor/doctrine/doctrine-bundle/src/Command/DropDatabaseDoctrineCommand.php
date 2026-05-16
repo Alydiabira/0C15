@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Bundle\DoctrineBundle\Command;
 
 use Doctrine\DBAL\DriverManager;
@@ -23,17 +25,16 @@ use function unlink;
  */
 class DropDatabaseDoctrineCommand extends DoctrineCommand
 {
-    public const RETURN_CODE_NOT_DROP = 1;
+    public const int RETURN_CODE_NOT_DROP = 1;
 
-    public const RETURN_CODE_NO_FORCE = 2;
+    public const int RETURN_CODE_NO_FORCE = 2;
 
-    /** @return void */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('doctrine:database:drop')
             ->setDescription('Drops the configured database')
-            ->addOption('connection', 'c', InputOption::VALUE_OPTIONAL, 'The connection to use for this command')
+            ->addOption('connection', 'c', InputOption::VALUE_REQUIRED, 'The connection to use for this command')
             ->addOption('if-exists', null, InputOption::VALUE_NONE, 'Don\'t trigger an error, when the database doesn\'t exist')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Set this parameter to execute this action')
             ->setHelp(<<<'EOT'
@@ -73,11 +74,12 @@ EOT);
             throw new InvalidArgumentException("Connection does not contain a 'path' or 'dbname' parameter and cannot be dropped.");
         }
 
-        /** @psalm-suppress InvalidArrayOffset Need to be compatible with DBAL < 4, which still has `$params['url']` */
+        /* @phpstan-ignore unset.offset (Need to be compatible with DBAL < 4, which still has `$params['url']`) */
         unset($params['dbname'], $params['url']);
 
         if ($connection->getDatabasePlatform() instanceof PostgreSQLPlatform) {
-            $params['dbname'] = 'postgres';
+            /** @phpstan-ignore nullCoalesce.offset (for DBAL < 4) */
+            $params['dbname'] = $params['default_dbname'] ?? 'postgres';
         }
 
         if (! $input->getOption('force')) {
@@ -104,7 +106,6 @@ EOT);
 
         try {
             if ($shouldDropDatabase) {
-                /** @psalm-suppress TypeDoesNotContainType Bogus error, Doctrine\DBAL\Schema\AbstractSchemaManager<Doctrine\DBAL\Platforms\AbstractPlatform> does contain Doctrine\DBAL\Schema\SQLiteSchemaManager */
                 if ($schemaManager instanceof SQLiteSchemaManager) {
                     // dropDatabase() is deprecated for Sqlite
                     $connection->close();

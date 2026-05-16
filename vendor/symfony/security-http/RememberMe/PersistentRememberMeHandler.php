@@ -32,29 +32,31 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  */
 final class PersistentRememberMeHandler extends AbstractRememberMeHandler
 {
-    private $tokenProvider;
-    private $tokenVerifier;
-
-    public function __construct(TokenProviderInterface $tokenProvider, string $secret, UserProviderInterface $userProvider, RequestStack $requestStack, array $options, ?LoggerInterface $logger = null, ?TokenVerifierInterface $tokenVerifier = null)
-    {
+    public function __construct(
+        private TokenProviderInterface $tokenProvider,
+        UserProviderInterface $userProvider,
+        RequestStack $requestStack,
+        array $options,
+        ?LoggerInterface $logger = null,
+        private ?TokenVerifierInterface $tokenVerifier = null,
+    ) {
         parent::__construct($userProvider, $requestStack, $options, $logger);
 
         if (!$tokenVerifier && $tokenProvider instanceof TokenVerifierInterface) {
-            $tokenVerifier = $tokenProvider;
+            $this->tokenVerifier = $tokenProvider;
         }
-        $this->tokenProvider = $tokenProvider;
-        $this->tokenVerifier = $tokenVerifier;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function createRememberMeCookie(UserInterface $user): void
     {
         $series = random_bytes(66);
         $tokenValue = strtr(base64_encode(substr($series, 33)), '+/=', '-_~');
         $series = strtr(base64_encode(substr($series, 0, 33)), '+/=', '-_~');
-        $token = new PersistentToken(\get_class($user), method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : $user->getUsername(), $series, $tokenValue, new \DateTime());
+        if (method_exists(PersistentToken::class, 'getClass')) {
+            $token = new PersistentToken($user::class, $user->getUserIdentifier(), $series, $tokenValue, new \DateTimeImmutable(), false);
+        } else {
+            $token = new PersistentToken($user->getUserIdentifier(), $series, $tokenValue, new \DateTimeImmutable());
+        }
 
         $this->tokenProvider->createNewToken($token);
         $this->createCookie(RememberMeDetails::fromPersistentToken($token, time() + $this->options['lifetime']));
@@ -66,49 +68,60 @@ final class PersistentRememberMeHandler extends AbstractRememberMeHandler
             throw new AuthenticationException('The cookie is incorrectly formatted.');
         }
 
-        [$series, $tokenValue] = explode(':', $rememberMeDetails->getValue());
-        $persistentToken = $this->tokenProvider->loadTokenBySeries($series);
+        [$series, $tokenValue] = explode(':', $rememberMeDetails->getValue(), 2);
+        $token = $this->tokenProvider->loadTokenBySeries($series);
+
+        if ($token->getUserIdentifier() !== $rememberMeDetails->getUserIdentifier()) {
+            throw new AuthenticationException('The cookie\'s hash is invalid.');
+        }
+
+        // content of $rememberMeDetails is not trustable. this prevents use of this class
+        unset($rememberMeDetails);
 
         if ($this->tokenVerifier) {
-            $isTokenValid = $this->tokenVerifier->verifyToken($persistentToken, $tokenValue);
+            $isTokenValid = $this->tokenVerifier->verifyToken($token, $tokenValue);
         } else {
-            $isTokenValid = hash_equals($persistentToken->getTokenValue(), $tokenValue);
+            $isTokenValid = hash_equals($token->getTokenValue(), $tokenValue);
         }
         if (!$isTokenValid) {
             throw new CookieTheftException('This token was already used. The account is possibly compromised.');
         }
 
-        if ($persistentToken->getLastUsed()->getTimestamp() + $this->options['lifetime'] < time()) {
+        $expires = $token->getLastUsed()->getTimestamp() + $this->options['lifetime'];
+        if ($expires < time()) {
             throw new AuthenticationException('The cookie has expired.');
         }
 
-        return parent::consumeRememberMeCookie($rememberMeDetails->withValue($persistentToken->getLastUsed()->getTimestamp().':'.$rememberMeDetails->getValue().':'.$persistentToken->getClass()));
+        return parent::consumeRememberMeCookie(new RememberMeDetails(
+            $token->getUserIdentifier(),
+            $expires,
+            $token->getLastUsed()->getTimestamp().':'.$series.':'.$tokenValue.':'.(method_exists($token, 'getClass') ? $token->getClass(false) : ''),
+        ));
     }
 
     public function processRememberMe(RememberMeDetails $rememberMeDetails, UserInterface $user): void
     {
         [$lastUsed, $series, $tokenValue, $class] = explode(':', $rememberMeDetails->getValue(), 4);
-        $persistentToken = new PersistentToken($class, $rememberMeDetails->getUserIdentifier(), $series, $tokenValue, new \DateTime('@'.$lastUsed));
+        if (method_exists(PersistentToken::class, 'getClass')) {
+            $token = new PersistentToken($class, $rememberMeDetails->getUserIdentifier(), $series, $tokenValue, new \DateTimeImmutable('@'.$lastUsed), false);
+        } else {
+            $token = new PersistentToken($rememberMeDetails->getUserIdentifier(), $series, $tokenValue, new \DateTimeImmutable('@'.$lastUsed));
+        }
 
         // if a token was regenerated less than a minute ago, there is no need to regenerate it
         // if multiple concurrent requests reauthenticate a user we do not want to update the token several times
-        if ($persistentToken->getLastUsed()->getTimestamp() + 60 >= time()) {
+        if ($token->getLastUsed()->getTimestamp() + 60 >= time()) {
             return;
         }
 
         $tokenValue = strtr(base64_encode(random_bytes(33)), '+/=', '-_~');
         $tokenLastUsed = new \DateTime();
-        if ($this->tokenVerifier) {
-            $this->tokenVerifier->updateExistingToken($persistentToken, $tokenValue, $tokenLastUsed);
-        }
+        $this->tokenVerifier?->updateExistingToken($token, $tokenValue, $tokenLastUsed);
         $this->tokenProvider->updateToken($series, $tokenValue, $tokenLastUsed);
 
         $this->createCookie($rememberMeDetails->withValue($series.':'.$tokenValue));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function clearRememberMeCookie(): void
     {
         parent::clearRememberMeCookie();
@@ -118,7 +131,12 @@ final class PersistentRememberMeHandler extends AbstractRememberMeHandler
             return;
         }
 
-        $rememberMeDetails = RememberMeDetails::fromRawCookie($cookie);
+        try {
+            $rememberMeDetails = RememberMeDetails::fromRawCookie($cookie);
+        } catch (AuthenticationException) {
+            // malformed cookie should not fail the response and can be simply ignored
+            return;
+        }
         [$series] = explode(':', $rememberMeDetails->getValue());
         $this->tokenProvider->deleteTokenBySeries($series);
     }

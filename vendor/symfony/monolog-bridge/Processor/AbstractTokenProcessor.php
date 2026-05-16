@@ -11,6 +11,7 @@
 
 namespace Symfony\Bridge\Monolog\Processor;
 
+use Monolog\LogRecord;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
@@ -19,39 +20,42 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
  *
  * @author Dany Maillard <danymaillard93b@gmail.com>
  * @author Igor Timoshenko <igor.timoshenko@i.ua>
+ *
+ * @internal
  */
 abstract class AbstractTokenProcessor
 {
-    /**
-     * @var TokenStorageInterface
-     */
-    protected $tokenStorage;
+    private bool $processing = false;
 
-    public function __construct(TokenStorageInterface $tokenStorage)
-    {
-        $this->tokenStorage = $tokenStorage;
+    public function __construct(
+        protected TokenStorageInterface $tokenStorage,
+    ) {
     }
 
     abstract protected function getKey(): string;
 
     abstract protected function getToken(): ?TokenInterface;
 
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
-        $record['extra'][$this->getKey()] = null;
+        if ($this->processing) {
+            return $record;
+        }
 
-        if (null !== $token = $this->getToken()) {
-            $record['extra'][$this->getKey()] = [
-                'authenticated' => method_exists($token, 'isAuthenticated') ? $token->isAuthenticated(false) : (bool) $token->getUser(),
-                'roles' => $token->getRoleNames(),
-            ];
+        $this->processing = true;
+        try {
+            $record->extra[$this->getKey()] = null;
 
-            // @deprecated since Symfony 5.3, change to $token->getUserIdentifier() in 6.0
-            if (method_exists($token, 'getUserIdentifier')) {
-                $record['extra'][$this->getKey()]['username'] = $record['extra'][$this->getKey()]['user_identifier'] = $token->getUserIdentifier();
-            } else {
-                $record['extra'][$this->getKey()]['username'] = $token->getUsername();
+            if (null !== $token = $this->getToken()) {
+                $record->extra[$this->getKey()] = [
+                    'authenticated' => (bool) $token->getUser(),
+                    'roles' => $token->getRoleNames(),
+                ];
+
+                $record->extra[$this->getKey()]['user_identifier'] = $token->getUserIdentifier();
             }
+        } finally {
+            $this->processing = false;
         }
 
         return $record;

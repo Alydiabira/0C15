@@ -90,6 +90,21 @@ trait MailerAssertionsTrait
         self::assertThat($email, new MimeConstraint\EmailAddressContains($headerName, $expectedValue), $message);
     }
 
+    public static function assertEmailAddressNotContains(RawMessage $email, string $headerName, string $expectedValue, string $message = ''): void
+    {
+        self::assertThat($email, new LogicalNot(new MimeConstraint\EmailAddressContains($headerName, $expectedValue)), $message);
+    }
+
+    public static function assertEmailSubjectContains(RawMessage $email, string $expectedValue, string $message = ''): void
+    {
+        self::assertThat($email, new MimeConstraint\EmailSubjectContains($expectedValue), $message);
+    }
+
+    public static function assertEmailSubjectNotContains(RawMessage $email, string $expectedValue, string $message = ''): void
+    {
+        self::assertThat($email, new LogicalNot(new MimeConstraint\EmailSubjectContains($expectedValue)), $message);
+    }
+
     /**
      * @return MessageEvent[]
      */
@@ -121,10 +136,6 @@ trait MailerAssertionsTrait
         $container = static::getContainer();
         if ($container->has('mailer.message_logger_listener')) {
             return $container->get('mailer.message_logger_listener')->getEvents();
-        }
-
-        if ($container->has('mailer.logger_message_listener')) {
-            return $container->get('mailer.logger_message_listener')->getEvents();
         }
 
         static::fail('A client must have Mailer enabled to make email assertions. Did you forget to require symfony/mailer?');

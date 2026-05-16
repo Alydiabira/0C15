@@ -18,6 +18,7 @@ use Symfony\Component\BrowserKit\History;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\HttpKernelBrowser;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Profiler\Profile as HttpProfile;
@@ -30,52 +31,66 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 class KernelBrowser extends HttpKernelBrowser
 {
-    private $hasPerformedRequest = false;
-    private $profiler = false;
-    private $reboot = true;
+    private bool $hasPerformedRequest = false;
+    private bool $profiler = false;
+    private bool $reboot = true;
 
-    /**
-     * {@inheritdoc}
-     */
     public function __construct(KernelInterface $kernel, array $server = [], ?History $history = null, ?CookieJar $cookieJar = null)
     {
         parent::__construct($kernel, $server, $history, $cookieJar);
     }
 
-    /**
-     * Returns the container.
-     *
-     * @return ContainerInterface
-     */
-    public function getContainer()
+    public function getContainer(): ContainerInterface
     {
         $container = $this->kernel->getContainer();
 
         return $container->has('test.service_container') ? $container->get('test.service_container') : $container;
     }
 
-    /**
-     * Returns the kernel.
-     *
-     * @return KernelInterface
-     */
-    public function getKernel()
+    public function getKernel(): KernelInterface
     {
         return $this->kernel;
     }
 
     /**
      * Gets the profile associated with the current Response.
-     *
-     * @return HttpProfile|false|null
      */
-    public function getProfile()
+    public function getProfile(): HttpProfile|false|null
     {
-        if (null === $this->response || !$this->getContainer()->has('profiler')) {
+        if (!isset($this->response) || !$this->getContainer()->has('profiler')) {
             return false;
         }
 
         return $this->getContainer()->get('profiler')->loadProfileFromResponse($this->response);
+    }
+
+    public function getSession(): ?SessionInterface
+    {
+        $container = $this->getContainer();
+
+        if (!$container->has('session.factory')) {
+            return null;
+        }
+
+        $session = $container->get('session.factory')->createSession();
+
+        $cookieJar = $this->getCookieJar();
+        $cookie = $cookieJar->get($session->getName());
+
+        if ($cookie instanceof Cookie) {
+            $session->setId($cookie->getValue());
+        }
+
+        $session->start();
+
+        if (!$cookie instanceof Cookie) {
+            $domains = array_unique(array_map(static fn (Cookie $cookie) => $cookie->getName() === $session->getName() ? $cookie->getDomain() : '', $cookieJar->all())) ?: [''];
+            foreach ($domains as $domain) {
+                $cookieJar->set(new Cookie($session->getName(), $session->getId(), domain: $domain));
+            }
+        }
+
+        return $session;
     }
 
     /**
@@ -83,7 +98,7 @@ class KernelBrowser extends HttpKernelBrowser
      *
      * If the profiler is not enabled, the call to this method does nothing.
      */
-    public function enableProfiler()
+    public function enableProfiler(): void
     {
         if ($this->getContainer()->has('profiler')) {
             $this->profiler = true;
@@ -96,7 +111,7 @@ class KernelBrowser extends HttpKernelBrowser
      * By default, the Client reboots the Kernel for each request. This method
      * allows to keep the same kernel across requests.
      */
-    public function disableReboot()
+    public function disableReboot(): void
     {
         $this->reboot = false;
     }
@@ -104,65 +119,47 @@ class KernelBrowser extends HttpKernelBrowser
     /**
      * Enables kernel reboot between requests.
      */
-    public function enableReboot()
+    public function enableReboot(): void
     {
         $this->reboot = true;
     }
 
     /**
-     * @param UserInterface $user
+     * @param UserInterface        $user
+     * @param array<string, mixed> $tokenAttributes
      *
      * @return $this
      */
-    public function loginUser(object $user, string $firewallContext = 'main'): self
+    public function loginUser(object $user, string $firewallContext = 'main', array $tokenAttributes = []): static
     {
         if (!interface_exists(UserInterface::class)) {
-            throw new \LogicException(sprintf('"%s" requires symfony/security-core to be installed.', __METHOD__));
+            throw new \LogicException(\sprintf('"%s" requires symfony/security-core to be installed. Try running "composer require symfony/security-core".', __METHOD__));
         }
 
         if (!$user instanceof UserInterface) {
-            throw new \LogicException(sprintf('The first argument of "%s" must be instance of "%s", "%s" provided.', __METHOD__, UserInterface::class, \is_object($user) ? \get_class($user) : \gettype($user)));
+            throw new \LogicException(\sprintf('The first argument of "%s" must be instance of "%s", "%s" provided.', __METHOD__, UserInterface::class, get_debug_type($user)));
         }
 
         $token = new TestBrowserToken($user->getRoles(), $user, $firewallContext);
-        // @deprecated since Symfony 5.4
-        if (method_exists($token, 'setAuthenticated')) {
-            $token->setAuthenticated(true, false);
-        }
+        $token->setAttributes($tokenAttributes);
 
         $container = $this->getContainer();
         $container->get('security.untracked_token_storage')->setToken($token);
 
-        if ($container->has('session.factory')) {
-            $session = $container->get('session.factory')->createSession();
-        } elseif ($container->has('session')) {
-            $session = $container->get('session');
-        } else {
+        if (!$session = $this->getSession()) {
             return $this;
         }
 
         $session->set('_security_'.$firewallContext, serialize($token));
         $session->save();
 
-        $domains = array_unique(array_map(function (Cookie $cookie) use ($session) {
-            return $cookie->getName() === $session->getName() ? $cookie->getDomain() : '';
-        }, $this->getCookieJar()->all())) ?: [''];
-        foreach ($domains as $domain) {
-            $cookie = new Cookie($session->getName(), $session->getId(), null, null, $domain);
-            $this->getCookieJar()->set($cookie);
-        }
-
         return $this;
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @param Request $request
-     *
-     * @return Response
      */
-    protected function doRequest(object $request)
+    protected function doRequest(object $request): Response
     {
         // avoid shutting down the Kernel if no request has been performed yet
         // WebTestCase::createClient() boots the Kernel but do not handle a request
@@ -184,13 +181,9 @@ class KernelBrowser extends HttpKernelBrowser
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @param Request $request
-     *
-     * @return Response
      */
-    protected function doRequestInProcess(object $request)
+    protected function doRequestInProcess(object $request): Response
     {
         $response = parent::doRequestInProcess($request);
 
@@ -208,10 +201,8 @@ class KernelBrowser extends HttpKernelBrowser
      * client and override this method.
      *
      * @param Request $request
-     *
-     * @return string
      */
-    protected function getScript(object $request)
+    protected function getScript(object $request): string
     {
         $kernel = var_export(serialize($this->kernel), true);
         $request = var_export(serialize($request), true);
@@ -237,25 +228,25 @@ class KernelBrowser extends HttpKernelBrowser
         $profilerCode = '';
         if ($this->profiler) {
             $profilerCode = <<<'EOF'
-$container = $kernel->getContainer();
-$container = $container->has('test.service_container') ? $container->get('test.service_container') : $container;
-$container->get('profiler')->enable();
-EOF;
+                $container = $kernel->getContainer();
+                $container = $container->has('test.service_container') ? $container->get('test.service_container') : $container;
+                $container->get('profiler')->enable();
+                EOF;
         }
 
         $code = <<<EOF
-<?php
+            <?php
 
-error_reporting($errorReporting);
+            error_reporting($errorReporting);
 
-$requires
+            $requires
 
-\$kernel = unserialize($kernel);
-\$kernel->boot();
-$profilerCode
+            \$kernel = unserialize($kernel);
+            \$kernel->boot();
+            $profilerCode
 
-\$request = unserialize($request);
-EOF;
+            \$request = unserialize($request);
+            EOF;
 
         return $code.$this->getHandleScript();
     }

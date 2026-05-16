@@ -11,41 +11,41 @@
 
 namespace Symfony\Component\Validator\Constraints;
 
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Exception\MissingOptionsException;
+
 /**
  * Use this constraint to sequentially validate nested constraints.
  * Validation for the nested constraints collection will stop at first violation.
- *
- * @Annotation
- * @Target({"CLASS", "PROPERTY", "METHOD", "ANNOTATION"})
  *
  * @author Maxime Steinhausser <maxime.steinhausser@gmail.com>
  */
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_PROPERTY | \Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
 class Sequentially extends Composite
 {
-    public $constraints = [];
+    public array|Constraint $constraints = [];
 
-    public function __construct($constraints = null, ?array $groups = null, $payload = null)
+    /**
+     * @param Constraint[]|null $constraints An array of validation constraints
+     * @param string[]|null     $groups
+     */
+    public function __construct(array|Constraint|null $constraints = null, ?array $groups = null, mixed $payload = null)
     {
-        parent::__construct($constraints ?? [], $groups, $payload);
+        if (null === $constraints || [] === $constraints) {
+            throw new MissingOptionsException(\sprintf('The options "constraints" must be set for constraint "%s".', self::class), ['constraints']);
+        }
+
+        $this->constraints = $constraints;
+
+        parent::__construct(null, $groups, $payload);
     }
 
-    public function getDefaultOption()
+    protected function getCompositeOption(): string
     {
         return 'constraints';
     }
 
-    public function getRequiredOptions()
-    {
-        return ['constraints'];
-    }
-
-    protected function getCompositeOption()
-    {
-        return 'constraints';
-    }
-
-    public function getTargets()
+    public function getTargets(): string|array
     {
         return [self::CLASS_CONSTRAINT, self::PROPERTY_CONSTRAINT];
     }
