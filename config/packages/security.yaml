@@ -6,10 +6,9 @@ security:
             algorithm: auto
 
     providers:
-        # used to reload user from session & other features (e.g. switch_user)
         app_user_provider:
             entity:
-                class: App\Entity\AdminUser
+                class: App\Entity\User
                 property: email
 
     firewalls:
@@ -30,14 +29,16 @@ security:
 
             logout:
                 path: app_logout
-                # where to redirect after logout
-                # target: app_any_route
 
     role_hierarchy:
-        ROLE_ADMIN: ROLE_USER
+        ROLE_INA: ROLE_USER
 
     access_control:
-        - { path: ^/admin, roles: ROLE_ADMIN }
+        # Accès réservé à Ina
+        - { path: ^/admin, roles: ROLE_INA }
+
+        # Accès aux médias (tous les utilisateurs connectés)
+        - { path: ^/media, roles: ROLE_USER }
 
 when@test:
     security:

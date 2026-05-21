@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Image;
 
 class MediaType extends AbstractType
 {
@@ -19,6 +20,20 @@ class MediaType extends AbstractType
         $builder
             ->add('file', FileType::class, [
                 'label' => 'Image',
+                'mapped' => false, // important : le fichier n’est pas stocké directement dans l’entité
+                'required' => true,
+                'constraints' => [
+                    new Image([
+                        'maxSize' => '2M',
+                        'mimeTypes' => [
+                            'image/jpeg',
+                            'image/png',
+                            'image/webp',
+                        ],
+                        'mimeTypesMessage' => 'Le fichier doit être une image valide (JPG, PNG ou WEBP).',
+                        'maxSizeMessage' => 'L’image ne doit pas dépasser 2 Mo.',
+                    ])
+                ],
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titre',

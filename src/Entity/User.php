@@ -6,18 +6,32 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\Column(type: 'string', length: 180, unique: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+
+    #[ORM\Column(type: 'string')]
+    private string $password;
+
     #[ORM\Column(type: 'boolean')]
-    private bool $admin = false;
+    private bool $isBlocked = false;
+
+    #[ORM\Column(type: 'string', length: 20)]
+    private string $type; // 'ina' ou 'invite'
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $name = null;
@@ -25,15 +39,13 @@ class User
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'string', length: 180, unique: true)]
-    private ?string $email = null;
-
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
     private Collection $medias;
 
     public function __construct()
     {
         $this->medias = new ArrayCollection();
+        $this->roles = ['ROLE_USER']; // rôle minimum
     }
 
     public function getId(): ?int
@@ -41,14 +53,74 @@ class User
         return $this->id;
     }
 
-    public function isAdmin(): bool
+    public function getEmail(): ?string
     {
-        return $this->admin;
+        return $this->email;
     }
 
-    public function setAdmin(bool $admin): static
+    public function setEmail(string $email): static
     {
-        $this->admin = $admin;
+        $this->email = $email;
+        return $this;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+
+        if ($this->type === 'ina') {
+            $roles[] = 'ROLE_INA';
+        }
+
+        return array_unique($roles);
+    }
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+        return $this;
+    }
+
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // rien à effacer
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->isBlocked;
+    }
+
+    public function setIsBlocked(bool $blocked): static
+    {
+        $this->isBlocked = $blocked;
+        return $this;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): static
+    {
+        $this->type = $type;
         return $this;
     }
 
@@ -71,17 +143,6 @@ class User
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-        return $this;
-    }
-
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
-
-    public function setEmail(string $email): static
-    {
-        $this->email = $email;
         return $this;
     }
 

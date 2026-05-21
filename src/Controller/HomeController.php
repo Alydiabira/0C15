@@ -23,7 +23,8 @@ class HomeController extends AbstractController
     public function guests(UserRepository $userRepository): Response
     {
         return $this->render('front/guests.html.twig', [
-            'guests' => $userRepository->findBy(['admin' => false]),
+            // Tous les invités = type = 'invite'
+            'guests' => $userRepository->findBy(['type' => 'invite']),
         ]);
     }
 
@@ -42,12 +43,17 @@ class HomeController extends AbstractController
         MediaRepository $mediaRepository,
         UserRepository $userRepository
     ): Response {
+        // Tous les albums
         $albums = $albumRepository->findAll();
-        $user = $userRepository->findOneBy(['admin' => true]);
 
+        // Ina = type = 'ina'
+        $ina = $userRepository->findOneBy(['type' => 'ina']);
+
+        // Si un album est sélectionné → afficher ses médias
+        // Sinon → afficher les médias d’Ina
         $medias = $album
             ? $mediaRepository->findBy(['album' => $album])
-            : $mediaRepository->findBy(['user' => $user]);
+            : $mediaRepository->findBy(['user' => $ina]);
 
         return $this->render('front/portfolio.html.twig', [
             'albums' => $albums,

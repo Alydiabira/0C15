@@ -19,8 +19,9 @@ class MediaController extends AbstractController
     {
         $page = $request->query->getInt('page', 1);
 
+        // 🔐 Si ce n’est pas Ina → ne voir que ses propres médias
         $criteria = [];
-        if (!$this->isGranted('ROLE_ADMIN')) {
+        if (!$this->isGranted('ROLE_INA')) {
             $criteria['user'] = $this->getUser();
         }
 
@@ -44,17 +45,21 @@ class MediaController extends AbstractController
     public function add(Request $request, EntityManagerInterface $em): Response
     {
         $media = new Media();
+
         $form = $this->createForm(MediaType::class, $media, [
-            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+            'is_admin' => $this->isGranted('ROLE_INA'),
         ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            if (!$this->isGranted('ROLE_ADMIN')) {
+            // 🔐 Un invité ne peut ajouter un média que pour lui-même
+            if (!$this->isGranted('ROLE_INA')) {
                 $media->setUser($this->getUser());
             }
 
+            // Upload du fichier
             if ($media->getFile()) {
                 $filename = md5(uniqid()) . '.' . $media->getFile()->guessExtension();
                 $media->setPath('uploads/' . $filename);
@@ -64,7 +69,7 @@ class MediaController extends AbstractController
             $em->persist($media);
             $em->flush();
 
-            return $this->redirectToRoute('admin_media_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin_media_index');
         }
 
         return $this->render('admin/media/add.html.twig', [
@@ -75,6 +80,11 @@ class MediaController extends AbstractController
     #[Route('/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(Request $request, Media $media, EntityManagerInterface $em): Response
     {
+        // 🔐 Un invité ne peut supprimer que ses propres médias
+        if ($media->getUser() !== $this->getUser() && !$this->isGranted('ROLE_INA')) {
+            throw $this->createAccessDeniedException();
+        }
+
         if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $request->request->get('_token'))) {
 
             if (file_exists($media->getPath())) {
@@ -85,6 +95,6 @@ class MediaController extends AbstractController
             $em->flush();
         }
 
-        return $this->redirectToRoute('admin_media_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('admin_media_index');
     }
 }

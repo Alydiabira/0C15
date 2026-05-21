@@ -17,6 +17,8 @@ class AlbumController extends AbstractController
     #[Route('', name: 'admin_album_index', methods: ['GET'])]
     public function index(AlbumRepository $albumRepository): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_INA');
+
         return $this->render('admin/album/index.html.twig', [
             'albums' => $albumRepository->findAll(),
         ]);
@@ -25,6 +27,8 @@ class AlbumController extends AbstractController
     #[Route('/add', name: 'admin_album_add', methods: ['GET', 'POST'])]
     public function add(Request $request, EntityManagerInterface $em): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_INA');
+
         $album = new Album();
         $form = $this->createForm(AlbumType::class, $album);
         $form->handleRequest($request);
@@ -33,7 +37,7 @@ class AlbumController extends AbstractController
             $em->persist($album);
             $em->flush();
 
-            return $this->redirectToRoute('admin_album_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin_album_index');
         }
 
         return $this->render('admin/album/add.html.twig', [
@@ -44,13 +48,14 @@ class AlbumController extends AbstractController
     #[Route('/update/{id}', name: 'admin_album_update', methods: ['GET', 'POST'])]
     public function update(Request $request, Album $album, EntityManagerInterface $em): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_INA');
+
         $form = $this->createForm(AlbumType::class, $album);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-
-            return $this->redirectToRoute('admin_album_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin_album_index');
         }
 
         return $this->render('admin/album/update.html.twig', [
@@ -61,11 +66,13 @@ class AlbumController extends AbstractController
     #[Route('/delete/{id}', name: 'admin_album_delete', methods: ['POST'])]
     public function delete(Request $request, Album $album, EntityManagerInterface $em): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_INA');
+
         if ($this->isCsrfTokenValid('delete_album_' . $album->getId(), $request->request->get('_token'))) {
             $em->remove($album);
             $em->flush();
         }
 
-        return $this->redirectToRoute('admin_album_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('admin_album_index');
     }
 }
