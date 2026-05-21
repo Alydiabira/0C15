@@ -24,8 +24,6 @@ use SebastianBergmann\Template\Template;
 
 /**
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-code-coverage
- *
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for phpunit/php-code-coverage
  */
 abstract class Renderer
 {
@@ -46,9 +44,6 @@ abstract class Renderer
         $this->hasBranchCoverage = $hasBranchCoverage;
     }
 
-    /**
-     * @param array<non-empty-string, float|int|string> $data
-     */
     protected function renderItemTemplate(Template $template, array $data): string
     {
         $numSeparator = '&nbsp;/&nbsp;';
@@ -101,8 +96,6 @@ abstract class Renderer
             $data['linesExecutedPercentAsString'] = 'n/a';
         }
 
-        $numFilesWithoutBranchCoverageData = $data['numFilesWithoutBranchCoverageData'] ?? 0;
-
         if ($data['numExecutablePaths'] > 0) {
             $pathsLevel = $this->colorLevel($data['pathsExecutedPercent']);
 
@@ -112,10 +105,6 @@ abstract class Renderer
             $pathsBar = $this->coverageBar(
                 $data['pathsExecutedPercent'],
             );
-
-            if ($numFilesWithoutBranchCoverageData > 0) {
-                $data['pathsExecutedPercentAsString'] .= ' <abbr title="Not all files have branch and path coverage data">*</abbr>';
-            }
         } else {
             $pathsLevel                           = '';
             $pathsNumber                          = '0' . $numSeparator . '0';
@@ -132,10 +121,6 @@ abstract class Renderer
             $branchesBar = $this->coverageBar(
                 $data['branchesExecutedPercent'],
             );
-
-            if ($numFilesWithoutBranchCoverageData > 0) {
-                $data['branchesExecutedPercentAsString'] .= ' <abbr title="Not all files have branch and path coverage data">*</abbr>';
-            }
         } else {
             $branchesLevel                           = '';
             $branchesNumber                          = '0' . $numSeparator . '0';
@@ -186,8 +171,8 @@ abstract class Renderer
                 'version'          => $this->version,
                 'runtime'          => $this->runtimeString(),
                 'generator'        => $this->generator,
-                'low_upper_bound'  => (string) $this->thresholds->lowUpperBound(),
-                'high_lower_bound' => (string) $this->thresholds->highLowerBound(),
+                'low_upper_bound'  => $this->thresholds->lowUpperBound(),
+                'high_lower_bound' => $this->thresholds->highLowerBound(),
             ],
         );
     }

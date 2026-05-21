@@ -9,39 +9,40 @@
  */
 namespace SebastianBergmann\FileIterator;
 
-use function array_any;
+use function assert;
 use function preg_match;
 use function realpath;
 use function str_ends_with;
 use function str_replace;
 use function str_starts_with;
+use AppendIterator;
 use FilterIterator;
 use SplFileInfo;
 
 /**
- * @template-extends FilterIterator<int, SplFileInfo, \Iterator>
+ * @template-extends FilterIterator<int, string, AppendIterator>
  *
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-file-iterator
  */
 final class Iterator extends FilterIterator
 {
-    public const int PREFIX = 0;
-    public const int SUFFIX = 1;
-    private false|string $basePath;
+    public const PREFIX = 0;
+    public const SUFFIX = 1;
+    private string|false $basePath;
 
     /**
-     * @var list<string>
+     * @psalm-var list<string>
      */
     private array $suffixes;
 
     /**
-     * @var list<string>
+     * @psalm-var list<string>
      */
     private array $prefixes;
 
     /**
-     * @param list<string> $suffixes
-     * @param list<string> $prefixes
+     * @psalm-param list<string> $suffixes
+     * @psalm-param list<string> $prefixes
      */
     public function __construct(string $basePath, \Iterator $iterator, array $suffixes = [], array $prefixes = [])
     {
@@ -55,6 +56,8 @@ final class Iterator extends FilterIterator
     public function accept(): bool
     {
         $current = $this->getInnerIterator()->current();
+
+        assert($current instanceof SplFileInfo);
 
         $filename = $current->getFilename();
         $realPath = $current->getRealPath();
@@ -73,7 +76,7 @@ final class Iterator extends FilterIterator
     private function acceptPath(string $path): bool
     {
         // Filter files in hidden directories by checking path that is relative to the base path.
-        if (preg_match('=/\.[^/]*/=', str_replace((string) $this->basePath, '', $path)) === 1) {
+        if (preg_match('=/\.[^/]*/=', str_replace((string) $this->basePath, '', $path))) {
             return false;
         }
 
@@ -91,15 +94,21 @@ final class Iterator extends FilterIterator
     }
 
     /**
-     * @param list<string> $subStrings
+     * @psalm-param list<string> $subStrings
      */
     private function acceptSubString(string $filename, array $subStrings, int $type): bool
     {
-        if ($subStrings === []) {
+        if (empty($subStrings)) {
             return true;
         }
 
-        return array_any($subStrings, static fn (string $string) => ($type === self::PREFIX && str_starts_with($filename, $string)) ||
-            ($type === self::SUFFIX && str_ends_with($filename, $string)));
+        foreach ($subStrings as $string) {
+            if (($type === self::PREFIX && str_starts_with($filename, $string)) ||
+                ($type === self::SUFFIX && str_ends_with($filename, $string))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

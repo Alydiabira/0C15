@@ -1,12 +1,6 @@
 CHANGELOG
 =========
 
-7.4
----
-
- * Add `HttpHeaderParser` to read `Link` headers from HTTP responses
- * Make `HttpHeaderSerializer` non-final
-
 4.4.0
 -----
 

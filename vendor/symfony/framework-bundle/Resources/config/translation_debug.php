@@ -18,7 +18,6 @@ return static function (ContainerConfigurator $container) {
     $container->services()
         ->set('translator.data_collector', DataCollectorTranslator::class)
             ->args([service('translator.data_collector.inner')])
-            ->tag('kernel.reset', ['method' => 'reset', 'on_invalid' => 'ignore'])
 
         ->set('data_collector.translation', TranslationDataCollector::class)
             ->args([service('translator.data_collector')])

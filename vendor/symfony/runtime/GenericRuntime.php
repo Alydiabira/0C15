@@ -46,10 +46,10 @@ class_exists(ClosureResolver::class);
  */
 class GenericRuntime implements RuntimeInterface
 {
-    protected array $options;
+    protected $options;
 
     /**
-     * @param array{
+     * @param array {
      *   debug?: ?bool,
      *   runtimes?: ?array,
      *   error_handler?: string|false,

@@ -43,6 +43,7 @@ class ContainerDebugCommand extends Command
         $this
             ->setDefinition([
                 new InputArgument('name', InputArgument::OPTIONAL, 'A service name (foo)'),
+                new InputOption('show-arguments', null, InputOption::VALUE_NONE, 'Show arguments in services'),
                 new InputOption('show-hidden', null, InputOption::VALUE_NONE, 'Show hidden (internal) services'),
                 new InputOption('tag', null, InputOption::VALUE_REQUIRED, 'Show all services with a specific tag'),
                 new InputOption('tags', null, InputOption::VALUE_NONE, 'Display tagged services for an application'),
@@ -67,6 +68,10 @@ class ContainerDebugCommand extends Command
                 To get specific information about a service, specify its name:
 
                   <info>php %command.full_name% validator</info>
+
+                To get specific information about a service including all its arguments, use the <info>--show-arguments</info> flag:
+
+                  <info>php %command.full_name% validator --show-arguments</info>
 
                 To see available types that can be used for autowiring, use the <info>--types</info> flag:
 
@@ -101,9 +106,6 @@ class ContainerDebugCommand extends Command
 
                   <info>php %command.full_name% --show-hidden</info>
 
-                The <info>--format</info> option specifies the format of the command output:
-
-                  <info>php %command.full_name% --format=json</info>
                 EOF
             )
         ;
@@ -156,6 +158,7 @@ class ContainerDebugCommand extends Command
 
         $helper = new DescriptorHelper();
         $options['format'] = $input->getOption('format');
+        $options['show_arguments'] = $input->getOption('show-arguments');
         $options['show_hidden'] = $input->getOption('show-hidden');
         $options['raw_text'] = $input->getOption('raw');
         $options['output'] = $io;
@@ -359,7 +362,6 @@ class ContainerDebugCommand extends Command
         return class_exists($serviceId) || interface_exists($serviceId, false);
     }
 
-    /** @return string[] */
     private function getAvailableFormatOptions(): array
     {
         return (new DescriptorHelper())->getFormats();

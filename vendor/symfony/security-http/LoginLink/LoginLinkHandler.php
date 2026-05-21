@@ -22,21 +22,22 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\LoginLink\Exception\ExpiredLoginLinkException;
 use Symfony\Component\Security\Http\LoginLink\Exception\InvalidLoginLinkException;
-use Symfony\Component\Security\Http\ParameterBagUtils;
 
 /**
  * @author Ryan Weaver <ryan@symfonycasts.com>
  */
 final class LoginLinkHandler implements LoginLinkHandlerInterface
 {
+    private UrlGeneratorInterface $urlGenerator;
+    private UserProviderInterface $userProvider;
     private array $options;
+    private SignatureHasher $signatureHasher;
 
-    public function __construct(
-        private UrlGeneratorInterface $urlGenerator,
-        private UserProviderInterface $userProvider,
-        private SignatureHasher $signatureHasher,
-        array $options,
-    ) {
+    public function __construct(UrlGeneratorInterface $urlGenerator, UserProviderInterface $userProvider, SignatureHasher $signatureHasher, array $options)
+    {
+        $this->urlGenerator = $urlGenerator;
+        $this->userProvider = $userProvider;
+        $this->signatureHasher = $signatureHasher;
         $this->options = array_merge([
             'route_name' => null,
             'lifetime' => 600,
@@ -80,16 +81,16 @@ final class LoginLinkHandler implements LoginLinkHandlerInterface
 
     public function consumeLoginLink(Request $request): UserInterface
     {
-        $userIdentifier = ParameterBagUtils::getRequestParameterValue($request, 'user');
+        $userIdentifier = $request->get('user');
 
-        if (!$hash = ParameterBagUtils::getRequestParameterValue($request, 'hash')) {
+        if (!$hash = $request->get('hash')) {
             throw new InvalidLoginLinkException('Missing "hash" parameter.');
         }
         if (!\is_string($hash)) {
             throw new InvalidLoginLinkException('Invalid "hash" parameter.');
         }
 
-        if (!$expires = ParameterBagUtils::getRequestParameterValue($request, 'expires')) {
+        if (!$expires = $request->get('expires')) {
             throw new InvalidLoginLinkException('Missing "expires" parameter.');
         }
         if (!preg_match('/^\d+$/', $expires)) {

@@ -12,20 +12,21 @@
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
 use Symfony\Component\Config\ConfigCache;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\DependencyInjection\Compiler\CheckAliasValidityPass;
 use Symfony\Component\DependencyInjection\Compiler\CheckTypeDeclarationsPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\Compiler\ResolveFactoryClassPass;
-use Symfony\Component\DependencyInjection\Compiler\ResolveParameterPlaceHoldersPass;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\ParameterBag\EnvPlaceholderParameterBag;
 use Symfony\Component\HttpKernel\Kernel;
 
 #[AsCommand(name: 'lint:container', description: 'Ensure that arguments injected into services match type declarations')]
@@ -37,7 +38,6 @@ final class ContainerLintCommand extends Command
     {
         $this
             ->setHelp('This command parses service definitions and ensures that injected values match the type declarations of each services\' class.')
-            ->addOption('resolve-env-vars', null, InputOption::VALUE_NONE, 'Resolve environment variables and fail if one is missing.')
         ;
     }
 
@@ -46,10 +46,8 @@ final class ContainerLintCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $errorIo = $io->getErrorStyle();
 
-        $resolveEnvVars = $input->getOption('resolve-env-vars');
-
         try {
-            $container = $this->getContainerBuilder($resolveEnvVars);
+            $container = $this->getContainerBuilder();
         } catch (RuntimeException $e) {
             $errorIo->error($e->getMessage());
 
@@ -59,7 +57,7 @@ final class ContainerLintCommand extends Command
         $container->setParameter('container.build_time', time());
 
         try {
-            $container->compile($resolveEnvVars);
+            $container->compile();
         } catch (InvalidArgumentException $e) {
             $errorIo->error($e->getMessage());
 
@@ -71,17 +69,16 @@ final class ContainerLintCommand extends Command
         return 0;
     }
 
-    private function getContainerBuilder(bool $resolveEnvVars): ContainerBuilder
+    private function getContainerBuilder(): ContainerBuilder
     {
         if (isset($this->container)) {
             return $this->container;
         }
 
         $kernel = $this->getApplication()->getKernel();
-        $container = $kernel->getContainer();
-        $file = $kernel->isDebug() ? $container->getParameter('debug.container.dump') : false;
+        $kernelContainer = $kernel->getContainer();
 
-        if (!$file || !(new ConfigCache($file, true))->isFresh()) {
+        if (!$kernel->isDebug() || !$kernelContainer->getParameter('debug.container.dump') || !(new ConfigCache($kernelContainer->getParameter('debug.container.dump'), true))->isFresh()) {
             if (!$kernel instanceof Kernel) {
                 throw new RuntimeException(\sprintf('This command does not support the application kernel: "%s" does not extend "%s".', get_debug_type($kernel), Kernel::class));
             }
@@ -93,31 +90,23 @@ final class ContainerLintCommand extends Command
             }, $kernel, $kernel::class);
             $container = $buildContainer();
         } else {
-            $container = unserialize(file_get_contents(substr_replace($file, '.ser', -4)));
-
-            if (!$container instanceof ContainerBuilder) {
-                throw new RuntimeException(\sprintf('This command does not support the application container: "%s" is not a "%s".', get_debug_type($container), ContainerBuilder::class));
+            if (!$kernelContainer instanceof Container) {
+                throw new RuntimeException(\sprintf('This command does not support the application container: "%s" does not extend "%s".', get_debug_type($kernelContainer), Container::class));
             }
 
-            if ($resolveEnvVars) {
-                $container->getCompilerPassConfig()->setOptimizationPasses([new ResolveParameterPlaceHoldersPass(), new ResolveFactoryClassPass()]);
-            } else {
-                $parameterBag = $container->getParameterBag();
-                $refl = new \ReflectionProperty($parameterBag, 'resolved');
-                $refl->setValue($parameterBag, true);
+            (new XmlFileLoader($container = new ContainerBuilder($parameterBag = new EnvPlaceholderParameterBag()), new FileLocator()))->load($kernelContainer->getParameter('debug.container.dump'));
 
-                $container->getCompilerPassConfig()->setOptimizationPasses([new ResolveFactoryClassPass()]);
-            }
+            $refl = new \ReflectionProperty($parameterBag, 'resolved');
+            $refl->setValue($parameterBag, true);
 
             $container->getCompilerPassConfig()->setBeforeOptimizationPasses([]);
+            $container->getCompilerPassConfig()->setOptimizationPasses([new ResolveFactoryClassPass()]);
             $container->getCompilerPassConfig()->setBeforeRemovingPasses([]);
         }
 
         $container->setParameter('container.build_hash', 'lint_container');
         $container->setParameter('container.build_id', 'lint_container');
-        $container->setParameter('container.runtime_mode', 'web=0');
 
-        $container->addCompilerPass(new CheckAliasValidityPass(), PassConfig::TYPE_BEFORE_REMOVING, -100);
         $container->addCompilerPass(new CheckTypeDeclarationsPass(true), PassConfig::TYPE_AFTER_REMOVING, -100);
 
         return $this->container = $container;

@@ -35,10 +35,14 @@ use Symfony\Component\Dotenv\Dotenv;
 #[AsCommand(name: 'dotenv:dump', description: 'Compile .env files to .env.local.php')]
 final class DotenvDumpCommand extends Command
 {
-    public function __construct(
-        private string $projectDir,
-        private ?string $defaultEnv = null,
-    ) {
+    private string $projectDir;
+    private ?string $defaultEnv;
+
+    public function __construct(string $projectDir, ?string $defaultEnv = null)
+    {
+        $this->projectDir = $projectDir;
+        $this->defaultEnv = $defaultEnv;
+
         parent::__construct();
     }
 
@@ -61,8 +65,14 @@ final class DotenvDumpCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $config = [];
-        $dotenvPath = $this->getDotenvPath($config);
+        if (is_file($projectDir = $this->projectDir)) {
+            $config = ['dotenv_path' => basename($projectDir)];
+            $projectDir = \dirname($projectDir);
+        }
 
+        $composerFile = $projectDir.'/composer.json';
+        $config += (is_file($composerFile) ? json_decode(file_get_contents($composerFile), true) : [])['extra']['runtime'] ?? [];
+        $dotenvPath = $projectDir.'/'.($config['dotenv_path'] ?? '.env');
         $env = $input->getArgument('env') ?? $this->defaultEnv;
         $envKey = $config['env_var_name'] ?? 'APP_ENV';
 
@@ -84,25 +94,9 @@ final class DotenvDumpCommand extends Command
             EOF;
         file_put_contents($dotenvPath.'.local.php', $vars, \LOCK_EX);
 
-        $output->writeln(\sprintf('Successfully dumped %s files in <info>%1$s.local.php</> for the <info>%s</> environment.', basename($dotenvPath), $env));
+        $output->writeln(\sprintf('Successfully dumped .env files in <info>.env.local.php</> for the <info>%s</> environment.', $env));
 
         return 0;
-    }
-
-    private function getDotenvPath(array &$config): string
-    {
-        $config = [];
-        $projectDir = $this->projectDir;
-
-        if (is_file($projectDir)) {
-            $config = ['dotenv_path' => basename($projectDir)];
-            $projectDir = \dirname($projectDir);
-        }
-
-        $composerFile = $projectDir.'/composer.json';
-        $config += $_SERVER['APP_RUNTIME_OPTIONS'] ?? (is_file($composerFile) ? json_decode(file_get_contents($composerFile), true) : [])['extra']['runtime'] ?? [];
-
-        return $projectDir.'/'.($config['dotenv_path'] ?? '.env');
     }
 
     private function loadEnv(string $dotenvPath, string $env, array $config): array
@@ -120,7 +114,6 @@ final class DotenvDumpCommand extends Command
         try {
             $dotenv->loadEnv($dotenvPath, null, 'dev', $testEnvs);
             unset($_ENV['SYMFONY_DOTENV_VARS']);
-            unset($_ENV['SYMFONY_DOTENV_PATH']);
 
             return $_ENV;
         } finally {

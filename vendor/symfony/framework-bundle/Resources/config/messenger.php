@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpTransportFactory;
@@ -19,16 +18,14 @@ use Symfony\Component\Messenger\Bridge\Beanstalkd\Transport\BeanstalkdTransportF
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\EventListener\AddErrorDetailsStampListener;
 use Symfony\Component\Messenger\EventListener\DispatchPcntlSignalListener;
-use Symfony\Component\Messenger\EventListener\ResetMemoryUsageListener;
 use Symfony\Component\Messenger\EventListener\ResetServicesListener;
 use Symfony\Component\Messenger\EventListener\SendFailedMessageForRetryListener;
 use Symfony\Component\Messenger\EventListener\SendFailedMessageToFailureTransportListener;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnCustomStopExceptionListener;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnRestartSignalListener;
+use Symfony\Component\Messenger\EventListener\StopWorkerOnSignalsListener;
 use Symfony\Component\Messenger\Handler\RedispatchMessageHandler;
 use Symfony\Component\Messenger\Middleware\AddBusNameStampMiddleware;
-use Symfony\Component\Messenger\Middleware\AddDefaultStampsMiddleware;
-use Symfony\Component\Messenger\Middleware\DeduplicateMiddleware;
 use Symfony\Component\Messenger\Middleware\DispatchAfterCurrentBusMiddleware;
 use Symfony\Component\Messenger\Middleware\FailedMessageProcessingMiddleware;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
@@ -45,13 +42,13 @@ use Symfony\Component\Messenger\Transport\Serialization\Normalizer\FlattenExcept
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\Serializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
-use Symfony\Component\Messenger\Transport\Serialization\SigningSerializer;
 use Symfony\Component\Messenger\Transport\Sync\SyncTransportFactory;
 use Symfony\Component\Messenger\Transport\TransportFactory;
-use Symfony\Component\String\LazyString;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
+        ->alias(SerializerInterface::class, 'messenger.default_serializer')
+
         // Asynchronous
         ->set('messenger.senders_locator', SendersLocator::class)
             ->args([
@@ -76,29 +73,10 @@ return static function (ContainerConfigurator $container) {
             ])
 
         ->set('serializer.normalizer.flatten_exception', FlattenExceptionNormalizer::class)
-            ->tag('serializer.normalizer', ['built_in' => true, 'priority' => -880])
+            ->tag('serializer.normalizer', ['priority' => -880])
 
-        ->set('.messenger.transport.native_php_serializer', PhpSerializer::class)
         ->set('messenger.transport.native_php_serializer', PhpSerializer::class)
-            ->factory('current')
-            ->args([[service('.messenger.transport.native_php_serializer')]])
         ->alias('messenger.default_serializer', 'messenger.transport.native_php_serializer')
-        ->alias(SerializerInterface::class, 'messenger.default_serializer')
-
-        ->set('messenger.signing_serializer', SigningSerializer::class)
-            ->abstract()
-            ->args([
-                service('.inner'),
-                inline_service('string') // wrap the signing key in a lazy string to prevent a hard dependency on the kernel.secret parameter
-                    ->factory(class_exists(LazyString::class) ? [LazyString::class, 'fromCallable'] : 'current')
-                    ->args([
-                        class_exists(LazyString::class, false) ? service_closure('.messenger.signing_serializer.signing_key') : [new Parameter('kernel.secret')],
-                    ]),
-                abstract_arg('message types to serializers'), // read and replaced by MessengerPass
-            ])
-        ->set('.messenger.signing_serializer.signing_key', 'string')
-            ->factory('current')
-            ->args([[new Parameter('kernel.secret')]])
 
         // Middleware
         ->set('messenger.middleware.handle_message', HandleMessageMiddleware::class)
@@ -108,13 +86,6 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('monolog.logger', ['channel' => 'messenger'])
             ->call('setLogger', [service('logger')->ignoreOnInvalid()])
-
-        ->set('messenger.middleware.deduplicate_middleware', DeduplicateMiddleware::class)
-            ->args([
-                service('lock.factory'),
-            ])
-
-        ->set('messenger.middleware.add_default_stamps_middleware', AddDefaultStampsMiddleware::class)
 
         ->set('messenger.middleware.add_bus_name_stamp_middleware', AddBusNameStampMiddleware::class)
             ->abstract()
@@ -165,9 +136,6 @@ return static function (ContainerConfigurator $container) {
             ->tag('messenger.transport_factory')
 
         ->set('messenger.transport.in_memory.factory', InMemoryTransportFactory::class)
-            ->args([
-                service('clock')->nullOnInvalid(),
-            ])
             ->tag('messenger.transport_factory')
             ->tag('kernel.reset', ['method' => 'reset'])
 
@@ -193,7 +161,6 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('delay ms'),
                 abstract_arg('multiplier'),
                 abstract_arg('max delay ms'),
-                abstract_arg('jitter'),
             ])
 
         // rate limiter
@@ -235,6 +202,18 @@ return static function (ContainerConfigurator $container) {
             ->tag('kernel.event_subscriber')
             ->tag('monolog.logger', ['channel' => 'messenger'])
 
+        ->set('messenger.listener.stop_worker_signals_listener', StopWorkerOnSignalsListener::class)
+            ->deprecate('6.4', 'symfony/messenger', 'The "%service_id%" service is deprecated, use the "Symfony\Component\Console\Command\SignalableCommandInterface" instead.')
+            ->args([
+                null,
+                service('logger')->ignoreOnInvalid(),
+            ])
+            ->tag('kernel.event_subscriber')
+            ->tag('monolog.logger', ['channel' => 'messenger'])
+
+        ->alias('messenger.listener.stop_worker_on_sigterm_signal_listener', 'messenger.listener.stop_worker_signals_listener')
+            ->deprecate('6.3', 'symfony/messenger', 'The "%alias_id%" service is deprecated, use the "Symfony\Component\Console\Command\SignalableCommandInterface" instead.')
+
         ->set('messenger.listener.stop_worker_on_stop_exception_listener', StopWorkerOnCustomStopExceptionListener::class)
             ->tag('kernel.event_subscriber')
 
@@ -242,9 +221,6 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('services_resetter'),
             ])
-
-        ->set('messenger.listener.reset_memory_usage', ResetMemoryUsageListener::class)
-            ->tag('kernel.event_subscriber')
 
         ->set('messenger.routable_message_bus', RoutableMessageBus::class)
             ->args([

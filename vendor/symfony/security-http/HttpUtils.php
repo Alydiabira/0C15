@@ -26,18 +26,23 @@ use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
  */
 class HttpUtils
 {
+    private ?UrlGeneratorInterface $urlGenerator;
+    private UrlMatcherInterface|RequestMatcherInterface|null $urlMatcher;
+    private ?string $domainRegexp;
+    private ?string $secureDomainRegexp;
+
     /**
      * @param $domainRegexp       A regexp the target of HTTP redirections must match, scheme included
      * @param $secureDomainRegexp A regexp the target of HTTP redirections must match when the scheme is "https"
      *
      * @throws \InvalidArgumentException
      */
-    public function __construct(
-        private ?UrlGeneratorInterface $urlGenerator = null,
-        private UrlMatcherInterface|RequestMatcherInterface|null $urlMatcher = null,
-        private ?string $domainRegexp = null,
-        private ?string $secureDomainRegexp = null,
-    ) {
+    public function __construct(?UrlGeneratorInterface $urlGenerator = null, UrlMatcherInterface|RequestMatcherInterface|null $urlMatcher = null, ?string $domainRegexp = null, ?string $secureDomainRegexp = null)
+    {
+        $this->urlGenerator = $urlGenerator;
+        $this->urlMatcher = $urlMatcher;
+        $this->domainRegexp = $domainRegexp;
+        $this->secureDomainRegexp = $secureDomainRegexp;
     }
 
     /**
@@ -69,9 +74,17 @@ class HttpUtils
             Request::setTrustedProxies([], Request::getTrustedHeaderSet());
         }
 
+        // Trusted proxies are disabled above, so getBaseUrl() now returns only the
+        // webserver-derived portion of the base URL (e.g. an Apache "Alias /myapp …"
+        // sub-directory install). That portion must remain in the generated sub-request
+        // URI so it can re-detect its own base URL from SCRIPT_NAME/REQUEST_URI; only
+        // the trusted-proxy prefix is dropped from the URL generator's context here,
+        // otherwise it would be doubled once the sub-request is processed.
         $context = $this->urlGenerator?->getContext();
-        if ($baseUrl = $context?->getBaseUrl()) {
-            $context->setBaseUrl('');
+        $contextBaseUrl = $context?->getBaseUrl();
+        $realBaseUrl = null !== $context ? $request->getBaseUrl() : null;
+        if ($resetBaseUrl = $contextBaseUrl !== $realBaseUrl) {
+            $context->setBaseUrl($realBaseUrl);
         }
 
         try {
@@ -80,8 +93,8 @@ class HttpUtils
             if ($trustedProxies) {
                 Request::setTrustedProxies($trustedProxies, Request::getTrustedHeaderSet());
             }
-            if ($baseUrl) {
-                $context->setBaseUrl($baseUrl);
+            if ($resetBaseUrl) {
+                $context->setBaseUrl($contextBaseUrl);
             }
         }
 
@@ -100,8 +113,8 @@ class HttpUtils
             $newRequest->attributes->set(SecurityRequestAttributes::LAST_USERNAME, $request->attributes->get(SecurityRequestAttributes::LAST_USERNAME));
         }
 
-        if ($request->attributes->has('_format')) {
-            $newRequest->attributes->set('_format', $request->attributes->get('_format'));
+        if ($request->get('_format')) {
+            $newRequest->attributes->set('_format', $request->get('_format'));
         }
         if ($request->getDefaultLocale() !== $request->getLocale()) {
             $newRequest->setLocale($request->getLocale());
@@ -134,7 +147,9 @@ class HttpUtils
                 }
 
                 return isset($parameters['_route']) && $path === $parameters['_route'];
-            } catch (MethodNotAllowedException|ResourceNotFoundException) {
+            } catch (MethodNotAllowedException) {
+                return false;
+            } catch (ResourceNotFoundException) {
                 return false;
             }
         }

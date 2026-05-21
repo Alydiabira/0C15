@@ -38,15 +38,17 @@ final class Dotenv
     private array $values = [];
     private array $overriddenValues = [];
     private array $loadedRawVars = [];
+    private string $envKey;
+    private string $debugKey;
     private array $prodEnvs = ['prod'];
     private bool $usePutenv = false;
     private bool $deferPutenv = false;
     private array $pendingPutenv = [];
 
-    public function __construct(
-        private string $envKey = 'APP_ENV',
-        private string $debugKey = 'APP_DEBUG',
-    ) {
+    public function __construct(string $envKey = 'APP_ENV', string $debugKey = 'APP_DEBUG')
+    {
+        $this->envKey = $envKey;
+        $this->debugKey = $debugKey;
     }
 
     /**
@@ -109,8 +111,6 @@ final class Dotenv
      */
     public function loadEnv(string $path, ?string $envKey = null, string $defaultEnv = 'dev', array $testEnvs = ['test'], bool $overrideExistingVars = false): void
     {
-        $this->populatePath($path);
-
         $this->deferPutenv = true;
         try {
             $k = $envKey ?? $this->envKey;
@@ -169,7 +169,6 @@ final class Dotenv
         $k = $this->envKey;
 
         if (\is_array($env) && ($overrideExistingVars || !isset($env[$k]) || ($_SERVER[$k] ?? $_ENV[$k] ?? $env[$k]) === $env[$k])) {
-            $this->populatePath($path);
             $this->populate($env, $overrideExistingVars);
         } else {
             $this->loadEnv($path, $k, $defaultEnv, $testEnvs, $overrideExistingVars);
@@ -568,7 +567,7 @@ final class Dotenv
                 throw $this->createFormatException(\sprintf('Issue expanding a command (%s)', $process->getErrorOutput()));
             }
 
-            return rtrim($process->getOutput(), "\n\r");
+            return preg_replace('/[\r\n]+$/', '', $process->getOutput());
         }, $value);
     }
 
@@ -589,7 +588,7 @@ final class Dotenv
             (?P<closing_brace>\})?             # optional closing brace
         /x';
 
-        return preg_replace_callback($regex, function ($matches) use ($loadedVars) {
+        $value = preg_replace_callback($regex, function ($matches) use ($loadedVars) {
             // odd number of backslashes means the $ character is escaped
             if (1 === \strlen($matches['backslashes']) % 2) {
                 return substr($matches[0], 1);
@@ -636,6 +635,8 @@ final class Dotenv
 
             return $matches['backslashes'].$value;
         }, $value);
+
+        return $value;
     }
 
     private function moveCursor(string $text): void
@@ -672,10 +673,11 @@ final class Dotenv
             unset($loadedVars['']);
 
             foreach ($values as $name => $_) {
-                if (!isset($this->overriddenValues[$name]) && isset($_ENV[$name])) {
-                    $this->overriddenValues[$name] = $_ENV[$name];
+                $alreadyExternal = isset($_ENV[$name]) || isset($_SERVER[$name]) && !str_starts_with($name, 'HTTP_');
+                if (!isset($this->overriddenValues[$name]) && $alreadyExternal) {
+                    $this->overriddenValues[$name] = $_ENV[$name] ?? $_SERVER[$name];
                 }
-                if (isset($loadedVars[$name]) || $overrideExistingVars || !isset($_ENV[$name])) {
+                if (isset($loadedVars[$name]) || $overrideExistingVars || !$alreadyExternal) {
                     $this->loadedRawVars[$name] = true;
                 }
             }
@@ -831,19 +833,5 @@ final class Dotenv
         $this->values = [];
         $this->overriddenValues = [];
         unset($this->path, $this->data, $this->lineno, $this->cursor, $this->end);
-    }
-
-    private function populatePath(string $path): void
-    {
-        $_ENV['SYMFONY_DOTENV_PATH'] = $_SERVER['SYMFONY_DOTENV_PATH'] = $path;
-
-        if (!$this->usePutenv) {
-            return;
-        }
-        if ($this->deferPutenv) {
-            $this->pendingPutenv['SYMFONY_DOTENV_PATH'] = true;
-        } else {
-            putenv('SYMFONY_DOTENV_PATH='.$path);
-        }
     }
 }

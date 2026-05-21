@@ -12,31 +12,29 @@ namespace PHPUnit\TextUI\Configuration;
 /**
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
- * @immutable
+ * @psalm-immutable
  */
-final readonly class FilterDirectory
+final class FilterDirectory
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
-    private string $path;
-    private string $prefix;
-    private string $suffix;
-    private bool $includeInCodeCoverage;
+    private readonly string $path;
+    private readonly string $prefix;
+    private readonly string $suffix;
 
     /**
-     * @param non-empty-string $path
+     * @psalm-param non-empty-string $path
      */
-    public function __construct(string $path, string $prefix, string $suffix, bool $includeInCodeCoverage = true)
+    public function __construct(string $path, string $prefix, string $suffix)
     {
-        $this->path                  = $path;
-        $this->prefix                = $prefix;
-        $this->suffix                = $suffix;
-        $this->includeInCodeCoverage = $includeInCodeCoverage;
+        $this->path   = $path;
+        $this->prefix = $prefix;
+        $this->suffix = $suffix;
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function path(): string
     {
@@ -51,10 +49,5 @@ final readonly class FilterDirectory
     public function suffix(): string
     {
         return $this->suffix;
-    }
-
-    public function includeInCodeCoverage(): bool
-    {
-        return $this->includeInCodeCoverage;
     }
 }

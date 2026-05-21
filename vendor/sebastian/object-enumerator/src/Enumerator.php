@@ -18,15 +18,13 @@ use SebastianBergmann\RecursionContext\Context;
 final class Enumerator
 {
     /**
-     * @param array<mixed>|object $variable
-     *
-     * @return list<object>
+     * @psalm-return list<object>
      */
     public function enumerate(array|object $variable, Context $processed = new Context): array
     {
         $objects = [];
 
-        if ($processed->contains($variable) !== false) {
+        if ($processed->contains($variable)) {
             return $objects;
         }
 
@@ -36,7 +34,6 @@ final class Enumerator
         $processed->add($variable);
 
         if (is_array($variable)) {
-            /** @phpstan-ignore foreach.nonIterable */
             foreach ($array as $element) {
                 if (!is_array($element) && !is_object($element)) {
                     continue;
@@ -45,7 +42,7 @@ final class Enumerator
                 /** @noinspection SlowArrayOperationsInLoopInspection */
                 $objects = array_merge(
                     $objects,
-                    $this->enumerate($element, $processed),
+                    $this->enumerate($element, $processed)
                 );
             }
 
@@ -62,7 +59,7 @@ final class Enumerator
             /** @noinspection SlowArrayOperationsInLoopInspection */
             $objects = array_merge(
                 $objects,
-                $this->enumerate($value, $processed),
+                $this->enumerate($value, $processed)
             );
         }
 

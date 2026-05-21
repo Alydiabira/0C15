@@ -21,18 +21,28 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 class RememberMeToken extends AbstractToken
 {
+    private string $secret;
+    private string $firewallName;
+
     /**
+     * @param string $secret A secret used to make sure the token is created by the app and not by a malicious client
+     *
      * @throws \InvalidArgumentException
      */
-    public function __construct(
-        UserInterface $user,
-        private string $firewallName,
-    ) {
+    public function __construct(UserInterface $user, string $firewallName, #[\SensitiveParameter] string $secret)
+    {
         parent::__construct($user->getRoles());
+
+        if (!$secret) {
+            throw new InvalidArgumentException('A non-empty secret is required.');
+        }
 
         if (!$firewallName) {
             throw new InvalidArgumentException('$firewallName must not be empty.');
         }
+
+        $this->firewallName = $firewallName;
+        $this->secret = $secret;
 
         $this->setUser($user);
     }
@@ -42,15 +52,19 @@ class RememberMeToken extends AbstractToken
         return $this->firewallName;
     }
 
+    public function getSecret(): string
+    {
+        return $this->secret;
+    }
+
     public function __serialize(): array
     {
-        return [null, $this->firewallName, parent::__serialize()];
+        return [$this->secret, $this->firewallName, parent::__serialize()];
     }
 
     public function __unserialize(array $data): void
     {
-        [, $this->firewallName, $parentData] = $data;
-        $parentData = \is_array($parentData) ? $parentData : unserialize($parentData);
+        [$this->secret, $this->firewallName, $parentData] = $data;
         parent::__unserialize($parentData);
     }
 }

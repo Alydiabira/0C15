@@ -26,12 +26,12 @@ use Symfony\Component\Routing\Generator\Dumper\CompiledUrlGeneratorDumper;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Loader\AttributeDirectoryLoader;
 use Symfony\Component\Routing\Loader\AttributeFileLoader;
-use Symfony\Component\Routing\Loader\AttributeServicesLoader;
 use Symfony\Component\Routing\Loader\ContainerLoader;
 use Symfony\Component\Routing\Loader\DirectoryLoader;
 use Symfony\Component\Routing\Loader\GlobFileLoader;
 use Symfony\Component\Routing\Loader\PhpFileLoader;
 use Symfony\Component\Routing\Loader\Psr4DirectoryLoader;
+use Symfony\Component\Routing\Loader\XmlFileLoader;
 use Symfony\Component\Routing\Loader\YamlFileLoader;
 use Symfony\Component\Routing\Matcher\Dumper\CompiledUrlMatcherDumper;
 use Symfony\Component\Routing\Matcher\ExpressionLanguageProvider;
@@ -49,6 +49,13 @@ return static function (ContainerConfigurator $container) {
 
     $container->services()
         ->set('routing.resolver', LoaderResolver::class)
+
+        ->set('routing.loader.xml', XmlFileLoader::class)
+            ->args([
+                service('file_locator'),
+                '%kernel.environment%',
+            ])
+            ->tag('routing.loader')
 
         ->set('routing.loader.yml', YamlFileLoader::class)
             ->args([
@@ -91,11 +98,8 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('routing.loader', ['priority' => -10])
 
-        ->set('routing.loader.attribute.services', AttributeServicesLoader::class)
-            ->args([
-                abstract_arg('classes tagged with "routing.controller"'),
-            ])
-            ->tag('routing.loader', ['priority' => -10])
+        ->alias('routing.loader.annotation', 'routing.loader.attribute')
+            ->deprecate('symfony/routing', '6.4', 'The "%alias_id%" service is deprecated, use the "routing.loader.attribute" service instead.')
 
         ->set('routing.loader.attribute.directory', AttributeDirectoryLoader::class)
             ->args([
@@ -104,12 +108,18 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('routing.loader', ['priority' => -10])
 
+        ->alias('routing.loader.annotation.directory', 'routing.loader.attribute.directory')
+            ->deprecate('symfony/routing', '6.4', 'The "%alias_id%" service is deprecated, use the "routing.loader.attribute.directory" service instead.')
+
         ->set('routing.loader.attribute.file', AttributeFileLoader::class)
             ->args([
                 service('file_locator'),
                 service('routing.loader.attribute'),
             ])
             ->tag('routing.loader', ['priority' => -10])
+
+        ->alias('routing.loader.annotation.file', 'routing.loader.attribute.file')
+            ->deprecate('symfony/routing', '6.4', 'The "%alias_id%" service is deprecated, use the "routing.loader.attribute.file" service instead.')
 
         ->set('routing.loader.psr4', Psr4DirectoryLoader::class)
             ->args([
@@ -163,10 +173,10 @@ return static function (ContainerConfigurator $container) {
                 param('request_listener.http_port'),
                 param('request_listener.https_port'),
             ])
-            ->call('setParameters', [[
-                '_functions' => service('router.expression_language_provider')->ignoreOnInvalid(),
-                '_locale' => '%kernel.default_locale%',
-            ]])
+            ->call('setParameter', [
+                '_functions',
+                service('router.expression_language_provider')->ignoreOnInvalid(),
+            ])
         ->alias(RequestContext::class, 'router.request_context')
 
         ->set('router.expression_language_provider', ExpressionLanguageProvider::class)

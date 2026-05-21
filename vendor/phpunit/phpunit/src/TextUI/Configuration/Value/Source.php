@@ -12,49 +12,34 @@ namespace PHPUnit\TextUI\Configuration;
 /**
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
- * @immutable
+ * @psalm-immutable
  */
-final readonly class Source
+final class Source
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
-    private ?string $baseline;
-    private bool $ignoreBaseline;
-    private FilterDirectoryCollection $includeDirectories;
-    private FilterFileCollection $includeFiles;
-    private FilterDirectoryCollection $excludeDirectories;
-    private FilterFileCollection $excludeFiles;
-    private bool $restrictNotices;
-    private bool $restrictWarnings;
-    private bool $ignoreSuppressionOfDeprecations;
-    private bool $ignoreSuppressionOfPhpDeprecations;
-    private bool $ignoreSuppressionOfErrors;
-    private bool $ignoreSuppressionOfNotices;
-    private bool $ignoreSuppressionOfPhpNotices;
-    private bool $ignoreSuppressionOfWarnings;
-    private bool $ignoreSuppressionOfPhpWarnings;
-    private bool $ignoreSelfDeprecations;
-    private bool $ignoreDirectDeprecations;
-    private bool $ignoreIndirectDeprecations;
-    private bool $identifyIssueTrigger;
+    private readonly ?string $baseline;
+    private readonly bool $ignoreBaseline;
+    private readonly FilterDirectoryCollection $includeDirectories;
+    private readonly FileCollection $includeFiles;
+    private readonly FilterDirectoryCollection $excludeDirectories;
+    private readonly FileCollection $excludeFiles;
+    private readonly bool $restrictDeprecations;
+    private readonly bool $restrictNotices;
+    private readonly bool $restrictWarnings;
+    private readonly bool $ignoreSuppressionOfDeprecations;
+    private readonly bool $ignoreSuppressionOfPhpDeprecations;
+    private readonly bool $ignoreSuppressionOfErrors;
+    private readonly bool $ignoreSuppressionOfNotices;
+    private readonly bool $ignoreSuppressionOfPhpNotices;
+    private readonly bool $ignoreSuppressionOfWarnings;
+    private readonly bool $ignoreSuppressionOfPhpWarnings;
 
     /**
-     * @var array{functions: list<non-empty-string>, methods: list<non-empty-string>, ignoreUndefinedTriggers: bool}
+     * @psalm-param non-empty-string $baseline
      */
-    private array $deprecationTriggers;
-
-    /**
-     * @var list<class-string>
-     */
-    private array $issueTriggerResolvers;
-
-    /**
-     * @param ?non-empty-string                                                                                        $baseline
-     * @param array{functions: list<non-empty-string>, methods: list<non-empty-string>, ignoreUndefinedTriggers: bool} $deprecationTriggers
-     * @param list<class-string>                                                                                       $issueTriggerResolvers
-     */
-    public function __construct(?string $baseline, bool $ignoreBaseline, FilterDirectoryCollection $includeDirectories, FilterFileCollection $includeFiles, FilterDirectoryCollection $excludeDirectories, FilterFileCollection $excludeFiles, bool $restrictNotices, bool $restrictWarnings, bool $ignoreSuppressionOfDeprecations, bool $ignoreSuppressionOfPhpDeprecations, bool $ignoreSuppressionOfErrors, bool $ignoreSuppressionOfNotices, bool $ignoreSuppressionOfPhpNotices, bool $ignoreSuppressionOfWarnings, bool $ignoreSuppressionOfPhpWarnings, array $deprecationTriggers, bool $ignoreSelfDeprecations, bool $ignoreDirectDeprecations, bool $ignoreIndirectDeprecations, bool $identifyIssueTrigger, array $issueTriggerResolvers = [])
+    public function __construct(?string $baseline, bool $ignoreBaseline, FilterDirectoryCollection $includeDirectories, FileCollection $includeFiles, FilterDirectoryCollection $excludeDirectories, FileCollection $excludeFiles, bool $restrictDeprecations, bool $restrictNotices, bool $restrictWarnings, bool $ignoreSuppressionOfDeprecations, bool $ignoreSuppressionOfPhpDeprecations, bool $ignoreSuppressionOfErrors, bool $ignoreSuppressionOfNotices, bool $ignoreSuppressionOfPhpNotices, bool $ignoreSuppressionOfWarnings, bool $ignoreSuppressionOfPhpWarnings)
     {
         $this->baseline                           = $baseline;
         $this->ignoreBaseline                     = $ignoreBaseline;
@@ -62,6 +47,7 @@ final readonly class Source
         $this->includeFiles                       = $includeFiles;
         $this->excludeDirectories                 = $excludeDirectories;
         $this->excludeFiles                       = $excludeFiles;
+        $this->restrictDeprecations               = $restrictDeprecations;
         $this->restrictNotices                    = $restrictNotices;
         $this->restrictWarnings                   = $restrictWarnings;
         $this->ignoreSuppressionOfDeprecations    = $ignoreSuppressionOfDeprecations;
@@ -71,16 +57,10 @@ final readonly class Source
         $this->ignoreSuppressionOfPhpNotices      = $ignoreSuppressionOfPhpNotices;
         $this->ignoreSuppressionOfWarnings        = $ignoreSuppressionOfWarnings;
         $this->ignoreSuppressionOfPhpWarnings     = $ignoreSuppressionOfPhpWarnings;
-        $this->deprecationTriggers                = $deprecationTriggers;
-        $this->ignoreSelfDeprecations             = $ignoreSelfDeprecations;
-        $this->ignoreDirectDeprecations           = $ignoreDirectDeprecations;
-        $this->ignoreIndirectDeprecations         = $ignoreIndirectDeprecations;
-        $this->identifyIssueTrigger               = $identifyIssueTrigger;
-        $this->issueTriggerResolvers              = $issueTriggerResolvers;
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->baseline
+     * @psalm-assert-if-true !null $this->baseline
      */
     public function useBaseline(): bool
     {
@@ -88,7 +68,7 @@ final readonly class Source
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->baseline
+     * @psalm-assert-if-true !null $this->baseline
      */
     public function hasBaseline(): bool
     {
@@ -98,7 +78,7 @@ final readonly class Source
     /**
      * @throws NoBaselineException
      *
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function baseline(): string
     {
@@ -114,7 +94,7 @@ final readonly class Source
         return $this->includeDirectories;
     }
 
-    public function includeFiles(): FilterFileCollection
+    public function includeFiles(): FileCollection
     {
         return $this->includeFiles;
     }
@@ -124,7 +104,7 @@ final readonly class Source
         return $this->excludeDirectories;
     }
 
-    public function excludeFiles(): FilterFileCollection
+    public function excludeFiles(): FileCollection
     {
         return $this->excludeFiles;
     }
@@ -132,6 +112,11 @@ final readonly class Source
     public function notEmpty(): bool
     {
         return $this->includeDirectories->notEmpty() || $this->includeFiles->notEmpty();
+    }
+
+    public function restrictDeprecations(): bool
+    {
+        return $this->restrictDeprecations;
     }
 
     public function restrictNotices(): bool
@@ -177,41 +162,5 @@ final readonly class Source
     public function ignoreSuppressionOfPhpWarnings(): bool
     {
         return $this->ignoreSuppressionOfPhpWarnings;
-    }
-
-    /**
-     * @return array{functions: list<non-empty-string>, methods: list<non-empty-string>, ignoreUndefinedTriggers: bool}
-     */
-    public function deprecationTriggers(): array
-    {
-        return $this->deprecationTriggers;
-    }
-
-    public function ignoreSelfDeprecations(): bool
-    {
-        return $this->ignoreSelfDeprecations;
-    }
-
-    public function ignoreDirectDeprecations(): bool
-    {
-        return $this->ignoreDirectDeprecations;
-    }
-
-    public function ignoreIndirectDeprecations(): bool
-    {
-        return $this->ignoreIndirectDeprecations;
-    }
-
-    public function identifyIssueTrigger(): bool
-    {
-        return $this->identifyIssueTrigger;
-    }
-
-    /**
-     * @return list<class-string>
-     */
-    public function issueTriggerResolvers(): array
-    {
-        return $this->issueTriggerResolvers;
     }
 }

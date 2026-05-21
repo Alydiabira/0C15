@@ -28,13 +28,15 @@ abstract class AbstractTransport implements TransportInterface
 {
     protected const HOST = 'localhost';
 
-    protected ?string $host = null;
-    protected ?int $port = null;
+    private ?EventDispatcherInterface $dispatcher;
 
-    public function __construct(
-        protected ?HttpClientInterface $client = null,
-        private ?EventDispatcherInterface $dispatcher = null,
-    ) {
+    protected $client;
+    protected $host;
+    protected $port;
+
+    public function __construct(?HttpClientInterface $client = null, ?EventDispatcherInterface $dispatcher = null)
+    {
+        $this->client = $client;
         if (null === $client) {
             if (!class_exists(HttpClient::class)) {
                 throw new LogicException(\sprintf('You cannot use "%s" as the HttpClient component is not installed. Try running "composer require symfony/http-client".', __CLASS__));
@@ -42,6 +44,8 @@ abstract class AbstractTransport implements TransportInterface
 
             $this->client = HttpClient::create();
         }
+
+        $this->dispatcher = $dispatcher;
     }
 
     /**

@@ -31,26 +31,18 @@ use Symfony\Contracts\Service\ServiceSubscriberInterface;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-final class Router extends BaseRouter implements WarmableInterface, ServiceSubscriberInterface
+class Router extends BaseRouter implements WarmableInterface, ServiceSubscriberInterface
 {
+    private ContainerInterface $container;
     private array $collectedParameters = [];
-    /**
-     * @var \Closure(string):mixed
-     */
     private \Closure $paramFetcher;
 
     /**
      * @param mixed $resource The main resource to load
      */
-    public function __construct(
-        private ContainerInterface $container,
-        mixed $resource,
-        array $options = [],
-        ?RequestContext $context = null,
-        ?ContainerInterface $parameters = null,
-        ?LoggerInterface $logger = null,
-        ?string $defaultLocale = null,
-    ) {
+    public function __construct(ContainerInterface $container, mixed $resource, array $options = [], ?RequestContext $context = null, ?ContainerInterface $parameters = null, ?LoggerInterface $logger = null, ?string $defaultLocale = null)
+    {
+        $this->container = $container;
         $this->resource = $resource;
         $this->context = $context ?? new RequestContext();
         $this->logger = $logger;
@@ -75,7 +67,7 @@ final class Router extends BaseRouter implements WarmableInterface, ServiceSubsc
             $this->collection->addResource(new ContainerParametersResource($this->collectedParameters));
 
             try {
-                $containerFile = ($this->paramFetcher)('kernel.build_dir').'/'.($this->paramFetcher)('kernel.container_class').'.php';
+                $containerFile = ($this->paramFetcher)('kernel.cache_dir').'/'.($this->paramFetcher)('kernel.container_class').'.php';
                 if (file_exists($containerFile)) {
                     $this->collection->addResource(new FileResource($containerFile));
                 } else {
@@ -88,14 +80,15 @@ final class Router extends BaseRouter implements WarmableInterface, ServiceSubsc
         return $this->collection;
     }
 
-    public function warmUp(string $cacheDir, ?string $buildDir = null): array
+    /**
+     * @param string|null $buildDir
+     */
+    public function warmUp(string $cacheDir /* , string $buildDir = null */): array
     {
-        if (null === $currentDir = $this->getOption('cache_dir')) {
-            return []; // skip warmUp when router doesn't use cache
-        }
+        $currentDir = $this->getOption('cache_dir');
 
         // force cache generation
-        $this->setOption('cache_dir', $buildDir ?? $cacheDir);
+        $this->setOption('cache_dir', $cacheDir);
         $this->getMatcher();
         $this->getGenerator();
 

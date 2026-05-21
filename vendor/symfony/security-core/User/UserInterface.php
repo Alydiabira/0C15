@@ -22,9 +22,6 @@ namespace Symfony\Component\Security\Core\User;
  * this interface. Objects that implement this interface are created and
  * loaded by different objects that implement UserProviderInterface.
  *
- * The __serialize/__unserialize() magic methods can be implemented on the user
- * class to prevent sensitive credentials from being put in the session storage.
- *
  * @see UserProviderInterface
  *
  * @author Fabien Potencier <fabien@symfony.com>
@@ -48,9 +45,17 @@ interface UserInterface
     public function getRoles(): array;
 
     /**
-     * Returns the identifier for this user (e.g. username or email address).
+     * Removes sensitive data from the user.
      *
-     * @return non-empty-string
+     * This is important if, at any given point, sensitive information like
+     * the plain-text password is stored on this object.
+     *
+     * @return void
+     */
+    public function eraseCredentials();
+
+    /**
+     * Returns the identifier for this user (e.g. username or email address).
      */
     public function getUserIdentifier(): string;
 }

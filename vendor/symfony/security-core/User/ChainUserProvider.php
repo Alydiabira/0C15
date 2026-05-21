@@ -22,16 +22,18 @@ use Symfony\Component\Security\Core\Exception\UserNotFoundException;
  *
  * @author Johannes M. Schmitt <schmittjoh@gmail.com>
  *
- * @template-implements AttributesBasedUserProviderInterface<UserInterface>
+ * @template-implements UserProviderInterface<UserInterface>
  */
-class ChainUserProvider implements AttributesBasedUserProviderInterface, PasswordUpgraderInterface
+class ChainUserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
+    private iterable $providers;
+
     /**
      * @param iterable<array-key, UserProviderInterface> $providers
      */
-    public function __construct(
-        private iterable $providers,
-    ) {
+    public function __construct(iterable $providers)
+    {
+        $this->providers = $providers;
     }
 
     /**
@@ -46,11 +48,23 @@ class ChainUserProvider implements AttributesBasedUserProviderInterface, Passwor
         return $this->providers;
     }
 
-    public function loadUserByIdentifier(string $identifier, array $attributes = []): UserInterface
+    /**
+     * @internal for compatibility with Symfony 5.4
+     */
+    public function loadUserByUsername(string $username): UserInterface
     {
+        return $this->loadUserByIdentifier($username);
+    }
+
+    /**
+     * @param array $attributes
+     */
+    public function loadUserByIdentifier(string $identifier/* , array $attributes = [] */): UserInterface
+    {
+        $attributes = \func_num_args() > 1 ? func_get_arg(1) : [];
         foreach ($this->providers as $provider) {
             try {
-                if ($provider instanceof AttributesBasedUserProviderInterface) {
+                if ($provider instanceof AttributesBasedUserProviderInterface || $provider instanceof self) {
                     return $provider->loadUserByIdentifier($identifier, $attributes);
                 }
 
@@ -90,7 +104,6 @@ class ChainUserProvider implements AttributesBasedUserProviderInterface, Passwor
             $e->setUserIdentifier($username);
             throw $e;
         }
-
         throw new UnsupportedUserException(\sprintf('There is no user provider for user "%s". Shouldn\'t the "supportsClass()" method of your user provider return true for this classname?', get_debug_type($user)));
     }
 

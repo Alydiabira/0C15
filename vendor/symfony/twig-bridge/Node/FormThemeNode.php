@@ -12,6 +12,7 @@
 namespace Symfony\Bridge\Twig\Node;
 
 use Symfony\Component\Form\FormRenderer;
+use Twig\Attribute\FirstClassTwigCallableReady;
 use Twig\Attribute\YieldReady;
 use Twig\Compiler;
 use Twig\Node\Node;
@@ -22,9 +23,13 @@ use Twig\Node\Node;
 #[YieldReady]
 final class FormThemeNode extends Node
 {
-    public function __construct(Node $form, Node $resources, int $lineno, bool $only = false)
+    public function __construct(Node $form, Node $resources, int $lineno, ?string $tag = null, bool $only = false)
     {
-        parent::__construct(['form' => $form, 'resources' => $resources], ['only' => $only], $lineno);
+        if (class_exists(FirstClassTwigCallableReady::class)) {
+            parent::__construct(['form' => $form, 'resources' => $resources], ['only' => $only], $lineno);
+        } else {
+            parent::__construct(['form' => $form, 'resources' => $resources], ['only' => $only], $lineno, $tag);
+        }
     }
 
     public function compile(Compiler $compiler): void

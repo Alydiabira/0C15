@@ -20,6 +20,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\ErrorHandler\ErrorRenderer\FileLinkFormatter;
 
 /**
@@ -32,10 +33,11 @@ use Symfony\Component\ErrorHandler\ErrorRenderer\FileLinkFormatter;
 #[AsCommand(name: 'debug:autowiring', description: 'List classes/interfaces you can use for autowiring')]
 class DebugAutowiringCommand extends ContainerDebugCommand
 {
-    public function __construct(
-        ?string $name = null,
-        private ?FileLinkFormatter $fileLinkFormatter = null,
-    ) {
+    private ?FileLinkFormatter $fileLinkFormatter;
+
+    public function __construct(?string $name = null, ?FileLinkFormatter $fileLinkFormatter = null)
+    {
+        $this->fileLinkFormatter = $fileLinkFormatter;
         parent::__construct($name);
     }
 
@@ -136,7 +138,7 @@ class DebugAutowiringCommand extends ContainerDebugCommand
                     }
                     $target = substr($id, \strlen($previousId) + 3);
 
-                    if ($container->findDefinition($id) === $container->findDefinition($serviceId)) {
+                    if ($previousId.' $'.(new Target($target))->getParsedName() === $serviceId) {
                         $serviceLine .= ' - <fg=magenta>target:</><fg=cyan>'.$target.'</>';
                         break;
                     }
@@ -184,7 +186,7 @@ class DebugAutowiringCommand extends ContainerDebugCommand
             return '';
         }
 
-        return $r->getFileName() ? ($this->fileLinkFormatter->format($r->getFileName(), $r->getStartLine()) ?: '') : '';
+        return (string) $this->fileLinkFormatter->format($r->getFileName(), $r->getStartLine());
     }
 
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void

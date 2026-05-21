@@ -21,13 +21,16 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class EntityType extends DoctrineType
 {
-    public function configureOptions(OptionsResolver $resolver): void
+    /**
+     * @return void
+     */
+    public function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
 
         // Invoke the query builder closure so that we can cache choice lists
         // for equal query builders
-        $queryBuilderNormalizer = static function (Options $options, $queryBuilder) {
+        $queryBuilderNormalizer = function (Options $options, $queryBuilder) {
             if (\is_callable($queryBuilder)) {
                 $queryBuilder = $queryBuilder($options['em']->getRepository($options['class']));
 

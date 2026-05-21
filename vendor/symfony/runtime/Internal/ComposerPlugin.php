@@ -74,7 +74,7 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        $projectDir = $fs->makePathRelative(realpath($projectDir.'/'.($extra['project_dir'] ?? '')), $vendorDir);
+        $projectDir = $fs->makePathRelative($projectDir, $vendorDir);
         $nestingLevel = 0;
 
         while (str_starts_with($projectDir, '../')) {
@@ -82,7 +82,6 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             $projectDir = substr($projectDir, 3);
         }
 
-        // the hack about __DIR__ is required because composer pre-processes plugins
         if (!$nestingLevel) {
             $projectDir = '__'.'DIR__.'.var_export('/'.$projectDir, true);
         } else {
@@ -91,7 +90,7 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
 
         $runtimeClass = $extra['class'] ?? SymfonyRuntime::class;
 
-        unset($extra['class'], $extra['autoload_template'], $extra['project_dir']);
+        unset($extra['class'], $extra['autoload_template']);
 
         $code = strtr(file_get_contents($autoloadTemplate), [
             '%project_dir%' => $projectDir,
@@ -118,3 +117,5 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
         ];
     }
 }
+
+// @php-cs-fixer-ignore no_useless_concat_operator Disable to not override hack about __DIR__ and Composer pre-processes plugins

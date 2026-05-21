@@ -46,33 +46,37 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 class AuthenticatorManager implements AuthenticatorManagerInterface, UserAuthenticatorInterface
 {
+    private iterable $authenticators;
+    private TokenStorageInterface $tokenStorage;
+    private EventDispatcherInterface $eventDispatcher;
+    private bool $eraseCredentials;
+    private ?LoggerInterface $logger;
+    private string $firewallName;
+    private bool $hideUserNotFoundExceptions;
+    private array $requiredBadges;
+
     /**
      * @param iterable<mixed, AuthenticatorInterface> $authenticators
      */
-    public function __construct(
-        private iterable $authenticators,
-        private TokenStorageInterface $tokenStorage,
-        private EventDispatcherInterface $eventDispatcher,
-        private string $firewallName,
-        private ?LoggerInterface $logger = null,
-        private bool $eraseCredentials = true,
-        private ExposeSecurityLevel $exposeSecurityErrors = ExposeSecurityLevel::None,
-        private array $requiredBadges = [],
-    ) {
+    public function __construct(iterable $authenticators, TokenStorageInterface $tokenStorage, EventDispatcherInterface $eventDispatcher, string $firewallName, ?LoggerInterface $logger = null, bool $eraseCredentials = true, bool $hideUserNotFoundExceptions = true, array $requiredBadges = [])
+    {
+        $this->authenticators = $authenticators;
+        $this->tokenStorage = $tokenStorage;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->firewallName = $firewallName;
+        $this->logger = $logger;
+        $this->eraseCredentials = $eraseCredentials;
+        $this->hideUserNotFoundExceptions = $hideUserNotFoundExceptions;
+        $this->requiredBadges = $requiredBadges;
     }
 
     /**
-     * @param BadgeInterface[]     $badges     Optionally, pass some Passport badges to use for the manual login
-     * @param array<string, mixed> $attributes Optionally, pass some Passport attributes to use for the manual login
+     * @param BadgeInterface[] $badges Optionally, pass some Passport badges to use for the manual login
      */
-    public function authenticateUser(UserInterface $user, AuthenticatorInterface $authenticator, Request $request, array $badges = [], array $attributes = []): ?Response
+    public function authenticateUser(UserInterface $user, AuthenticatorInterface $authenticator, Request $request, array $badges = []): ?Response
     {
         // create an authentication token for the User
         $passport = new SelfValidatingPassport(new UserBadge($user->getUserIdentifier(), static fn () => $user), $badges);
-        foreach ($attributes as $k => $v) {
-            $passport->setAttribute($k, $v);
-        }
-
         $token = $authenticator->createToken($passport, $this->firewallName);
 
         // announce the authentication token
@@ -113,12 +117,12 @@ class AuthenticatorManager implements AuthenticatorManagerInterface, UserAuthent
             }
         }
 
-        $request->attributes->set('_security_skipped_authenticators', $skippedAuthenticators);
-        $request->attributes->set('_security_authenticators', $authenticators);
-
         if (!$authenticators) {
             return false;
         }
+
+        $request->attributes->set('_security_authenticators', $authenticators);
+        $request->attributes->set('_security_skipped_authenticators', $skippedAuthenticators);
 
         return $lazy ? null : true;
     }
@@ -196,6 +200,10 @@ class AuthenticatorManager implements AuthenticatorManagerInterface, UserAuthent
             // announce the authentication token
             $authenticatedToken = $this->eventDispatcher->dispatch(new AuthenticationTokenCreatedEvent($authenticatedToken, $passport))->getAuthenticatedToken();
 
+            if (true === $this->eraseCredentials) {
+                $authenticatedToken->eraseCredentials();
+            }
+
             $this->eventDispatcher->dispatch(new AuthenticationSuccessEvent($authenticatedToken), AuthenticationEvents::AUTHENTICATION_SUCCESS);
 
             $this->logger?->info('Authenticator successful!', ['token' => $authenticatedToken, 'authenticator' => ($authenticator instanceof TraceableAuthenticator ? $authenticator->getAuthenticator() : $authenticator)::class]);
@@ -244,7 +252,7 @@ class AuthenticatorManager implements AuthenticatorManagerInterface, UserAuthent
 
         // Avoid leaking error details in case of invalid user (e.g. user not found or invalid account status)
         // to prevent user enumeration via response content comparison
-        if ($this->isSensitiveException($authenticationException)) {
+        if ($this->hideUserNotFoundExceptions && ($authenticationException instanceof UserNotFoundException || ($authenticationException instanceof AccountStatusException && !$authenticationException instanceof CustomUserMessageAccountStatusException))) {
             $authenticationException = new BadCredentialsException('Bad credentials.', 0, $authenticationException);
         }
 
@@ -257,18 +265,5 @@ class AuthenticatorManager implements AuthenticatorManagerInterface, UserAuthent
 
         // returning null is ok, it means they want the request to continue
         return $loginFailureEvent->getResponse();
-    }
-
-    private function isSensitiveException(AuthenticationException $exception): bool
-    {
-        if (ExposeSecurityLevel::All !== $this->exposeSecurityErrors && $exception instanceof UserNotFoundException) {
-            return true;
-        }
-
-        if (ExposeSecurityLevel::None === $this->exposeSecurityErrors && $exception instanceof AccountStatusException && !$exception instanceof CustomUserMessageAccountStatusException) {
-            return true;
-        }
-
-        return false;
     }
 }

@@ -16,7 +16,6 @@ use PHPUnit\Framework\Constraint\LogicalAnd;
 use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\ExpectationFailedException;
 use Symfony\Component\BrowserKit\AbstractBrowser;
-use Symfony\Component\BrowserKit\History;
 use Symfony\Component\BrowserKit\Request as BrowserKitRequest;
 use Symfony\Component\BrowserKit\Response as BrowserKitResponse;
 use Symfony\Component\BrowserKit\Test\Constraint as BrowserKitConstraint;
@@ -31,33 +30,30 @@ use Symfony\Component\HttpFoundation\Test\Constraint as ResponseConstraint;
  */
 trait BrowserKitAssertionsTrait
 {
-    private static bool $defaultVerboseMode = true;
-
-    public static function setBrowserKitAssertionsAsVerbose(bool $verbose): void
+    public static function assertResponseIsSuccessful(string $message = ''): void
     {
-        self::$defaultVerboseMode = $verbose;
+        self::assertThatForResponse(new ResponseConstraint\ResponseIsSuccessful(), $message);
     }
 
-    public static function assertResponseIsSuccessful(string $message = '', ?bool $verbose = null): void
+    public static function assertResponseStatusCodeSame(int $expectedCode, string $message = ''): void
     {
-        self::assertThatForResponse(new ResponseConstraint\ResponseIsSuccessful($verbose ?? self::$defaultVerboseMode), $message);
+        self::assertThatForResponse(new ResponseConstraint\ResponseStatusCodeSame($expectedCode), $message);
     }
 
-    public static function assertResponseStatusCodeSame(int $expectedCode, string $message = '', ?bool $verbose = null): void
+    public static function assertResponseFormatSame(?string $expectedFormat, string $message = ''): void
     {
-        self::assertThatForResponse(new ResponseConstraint\ResponseStatusCodeSame($expectedCode, $verbose ?? self::$defaultVerboseMode), $message);
+        self::assertThatForResponse(new ResponseConstraint\ResponseFormatSame(self::getRequest(), $expectedFormat), $message);
     }
 
-    public static function assertResponseFormatSame(?string $expectedFormat, string $message = '', ?bool $verbose = null): void
+    public static function assertResponseRedirects(?string $expectedLocation = null, ?int $expectedCode = null, string $message = ''): void
     {
-        self::assertThatForResponse(new ResponseConstraint\ResponseFormatSame(self::getRequest(), $expectedFormat, $verbose ?? self::$defaultVerboseMode), $message);
-    }
-
-    public static function assertResponseRedirects(?string $expectedLocation = null, ?int $expectedCode = null, string $message = '', ?bool $verbose = null): void
-    {
-        $constraint = new ResponseConstraint\ResponseIsRedirected($verbose ?? self::$defaultVerboseMode);
+        $constraint = new ResponseConstraint\ResponseIsRedirected();
         if ($expectedLocation) {
-            $locationConstraint = new ResponseConstraint\ResponseHeaderLocationSame(self::getRequest(), $expectedLocation);
+            if (class_exists(ResponseConstraint\ResponseHeaderLocationSame::class)) {
+                $locationConstraint = new ResponseConstraint\ResponseHeaderLocationSame(self::getRequest(), $expectedLocation);
+            } else {
+                $locationConstraint = new ResponseConstraint\ResponseHeaderSame('Location', $expectedLocation);
+            }
 
             $constraint = LogicalAnd::fromConstraints($constraint, $locationConstraint);
         }
@@ -106,9 +102,9 @@ trait BrowserKitAssertionsTrait
         ), $message);
     }
 
-    public static function assertResponseIsUnprocessable(string $message = '', ?bool $verbose = null): void
+    public static function assertResponseIsUnprocessable(string $message = ''): void
     {
-        self::assertThatForResponse(new ResponseConstraint\ResponseIsUnprocessable($verbose ?? self::$defaultVerboseMode), $message);
+        self::assertThatForResponse(new ResponseConstraint\ResponseIsUnprocessable(), $message);
     }
 
     public static function assertBrowserHasCookie(string $name, string $path = '/', ?string $domain = null, string $message = ''): void
@@ -119,38 +115,6 @@ trait BrowserKitAssertionsTrait
     public static function assertBrowserNotHasCookie(string $name, string $path = '/', ?string $domain = null, string $message = ''): void
     {
         self::assertThatForClient(new LogicalNot(new BrowserKitConstraint\BrowserHasCookie($name, $path, $domain)), $message);
-    }
-
-    public static function assertBrowserHistoryIsOnFirstPage(string $message = ''): void
-    {
-        if (!method_exists(History::class, 'isFirstPage')) {
-            throw new \LogicException('The `assertBrowserHistoryIsOnFirstPage` method requires symfony/browser-kit >= 7.4.');
-        }
-        self::assertThatForClient(new BrowserKitConstraint\BrowserHistoryIsOnFirstPage(), $message);
-    }
-
-    public static function assertBrowserHistoryIsNotOnFirstPage(string $message = ''): void
-    {
-        if (!method_exists(History::class, 'isFirstPage')) {
-            throw new \LogicException('The `assertBrowserHistoryIsNotOnFirstPage` method requires symfony/browser-kit >= 7.4.');
-        }
-        self::assertThatForClient(new LogicalNot(new BrowserKitConstraint\BrowserHistoryIsOnFirstPage()), $message);
-    }
-
-    public static function assertBrowserHistoryIsOnLastPage(string $message = ''): void
-    {
-        if (!method_exists(History::class, 'isLastPage')) {
-            throw new \LogicException('The `assertBrowserHistoryIsOnLastPage` method requires symfony/browser-kit >= 7.4.');
-        }
-        self::assertThatForClient(new BrowserKitConstraint\BrowserHistoryIsOnLastPage(), $message);
-    }
-
-    public static function assertBrowserHistoryIsNotOnLastPage(string $message = ''): void
-    {
-        if (!method_exists(History::class, 'isLastPage')) {
-            throw new \LogicException('The `assertBrowserHistoryIsNotOnLastPage` method requires symfony/browser-kit >= 7.4.');
-        }
-        self::assertThatForClient(new LogicalNot(new BrowserKitConstraint\BrowserHistoryIsOnLastPage()), $message);
     }
 
     public static function assertBrowserCookieValueSame(string $name, string $expectedValue, bool $raw = false, string $path = '/', ?string $domain = null, string $message = ''): void

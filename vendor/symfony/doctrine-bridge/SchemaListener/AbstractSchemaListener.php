@@ -12,13 +12,8 @@
 namespace Symfony\Bridge\Doctrine\SchemaListener;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\Exception as DBALDriverException;
-use Doctrine\DBAL\Exception\DatabaseObjectExistsException;
 use Doctrine\DBAL\Exception\DatabaseObjectNotFoundException;
-use Doctrine\DBAL\Schema\Name\Identifier;
-use Doctrine\DBAL\Schema\Name\UnqualifiedName;
 use Doctrine\DBAL\Schema\NamedObject;
-use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
@@ -57,46 +52,31 @@ abstract class AbstractSchemaListener
         }
     }
 
-    /**
-     * @return \Closure(\Closure(string): mixed): bool
-     */
     protected function getIsSameDatabaseChecker(Connection $connection): \Closure
     {
         return static function (\Closure $exec) use ($connection): bool {
-            $schemaManager = $connection->createSchemaManager();
-            $key = bin2hex(random_bytes(7));
-            $table = new Table('schema_subscriber_check_');
+            $schemaManager = method_exists($connection, 'createSchemaManager') ? $connection->createSchemaManager() : $connection->getSchemaManager();
+            $checkTable = 'schema_subscriber_check_'.bin2hex(random_bytes(7));
+            $table = new Table($checkTable);
             $table->addColumn('id', Types::INTEGER)
                 ->setAutoincrement(true)
                 ->setNotnull(true);
-            $table->addColumn('random_key', Types::STRING)
-                ->setLength(14)
-                ->setNotNull(true)
-            ;
+            $table->setPrimaryKey(['id']);
 
-            $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, [new UnqualifiedName(Identifier::unquoted('id'))], true));
+            $schemaManager->createTable($table);
 
             try {
-                $schemaManager->createTable($table);
-            } catch (DatabaseObjectExistsException) {
-            }
-
-            $connection->executeStatement('INSERT INTO schema_subscriber_check_ (random_key) VALUES (:key)', ['key' => $key], ['key' => Types::STRING]);
-
-            try {
-                $exec(\sprintf('DELETE FROM schema_subscriber_check_ WHERE random_key = %s', $connection->getDatabasePlatform()->quoteStringLiteral($key)));
-            } catch (DBALDriverException|\PDOException) {
+                $exec(\sprintf('DROP TABLE %s', $checkTable));
+            } catch (\Exception) {
+                // ignore
             }
 
             try {
-                return !$connection->executeStatement('DELETE FROM schema_subscriber_check_ WHERE random_key = :key', ['key' => $key], ['key' => Types::STRING]);
-            } finally {
-                if (!$connection->executeQuery('SELECT count(id) FROM schema_subscriber_check_')->fetchOne()) {
-                    try {
-                        $schemaManager->dropTable('schema_subscriber_check_');
-                    } catch (DatabaseObjectNotFoundException) {
-                    }
-                }
+                $schemaManager->dropTable($checkTable);
+
+                return false;
+            } catch (DatabaseObjectNotFoundException) {
+                return true;
             }
         };
     }

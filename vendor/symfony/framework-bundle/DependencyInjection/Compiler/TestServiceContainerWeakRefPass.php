@@ -21,7 +21,10 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class TestServiceContainerWeakRefPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container): void
+    /**
+     * @return void
+     */
+    public function process(ContainerBuilder $container)
     {
         if (!$container->hasDefinition('test.private_services_locator')) {
             return;
@@ -42,7 +45,7 @@ class TestServiceContainerWeakRefPass implements CompilerPassInterface
         $aliases = $container->getAliases();
 
         foreach ($aliases as $id => $alias) {
-            if ($id && '.' !== $id[0] && $alias->isPrivate()) {
+            if ($id && '.' !== $id[0] && (!$alias->isPublic() || $alias->isPrivate())) {
                 while (isset($aliases[$target = (string) $alias])) {
                     $alias = $aliases[$target];
                 }

@@ -23,6 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -40,11 +41,15 @@ class AssetsInstallCommand extends Command
     public const METHOD_ABSOLUTE_SYMLINK = 'absolute symlink';
     public const METHOD_RELATIVE_SYMLINK = 'relative symlink';
 
-    public function __construct(
-        private Filesystem $filesystem,
-        private string $projectDir,
-    ) {
+    private Filesystem $filesystem;
+    private string $projectDir;
+
+    public function __construct(Filesystem $filesystem, string $projectDir)
+    {
         parent::__construct();
+
+        $this->filesystem = $filesystem;
+        $this->projectDir = $projectDir;
     }
 
     protected function configure(): void
@@ -118,6 +123,7 @@ class AssetsInstallCommand extends Command
         $copyUsed = false;
         $exitCode = 0;
         $validAssetDirs = [];
+        /** @var BundleInterface $bundle */
         foreach ($kernel->getBundles() as $bundle) {
             if (!is_dir($originDir = $bundle->getPath().'/Resources/public') && !is_dir($originDir = $bundle->getPath().'/public')) {
                 continue;
@@ -258,7 +264,7 @@ class AssetsInstallCommand extends Command
             return $defaultPublicDir;
         }
 
-        $composerConfig = json_decode($this->filesystem->readFile($composerFilePath), true, flags: \JSON_THROW_ON_ERROR);
+        $composerConfig = json_decode(file_get_contents($composerFilePath), true);
 
         return $composerConfig['extra']['public-dir'] ?? $defaultPublicDir;
     }

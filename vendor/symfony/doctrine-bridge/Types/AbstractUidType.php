@@ -90,16 +90,29 @@ abstract class AbstractUidType extends Type
 
     private function hasNativeGuidType(AbstractPlatform $platform): bool
     {
-        return $platform->getGuidTypeDeclarationSQL([]) !== $platform->getStringTypeDeclarationSQL(['fixed' => true, 'length' => 36]);
+        // Compatibility with DBAL < 3.4
+        $method = method_exists($platform, 'getStringTypeDeclarationSQL')
+            ? 'getStringTypeDeclarationSQL'
+            : 'getVarcharTypeDeclarationSQL';
+
+        return $platform->getGuidTypeDeclarationSQL([]) !== $platform->$method(['fixed' => true, 'length' => 36]);
     }
 
     private function throwInvalidType(mixed $value): never
     {
+        if (!class_exists(InvalidType::class)) {
+            throw ConversionException::conversionFailedInvalidType($value, $this->getName(), ['null', 'string', AbstractUid::class]);
+        }
+
         throw InvalidType::new($value, $this->getName(), ['null', 'string', AbstractUid::class]);
     }
 
     private function throwValueNotConvertible(mixed $value, \Throwable $previous): never
     {
+        if (!class_exists(ValueNotConvertible::class)) {
+            throw ConversionException::conversionFailed($value, $this->getName(), $previous);
+        }
+
         throw ValueNotConvertible::new($value, $this->getName(), null, $previous);
     }
 }

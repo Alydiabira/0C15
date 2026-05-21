@@ -29,19 +29,21 @@ use Symfony\Component\Notifier\Recipient\RecipientInterface;
  */
 class EmailChannel implements ChannelInterface
 {
+    private ?TransportInterface $transport;
+    private ?MessageBusInterface $bus;
     private string|Address|null $from;
+    private ?Envelope $envelope;
 
-    public function __construct(
-        private ?TransportInterface $transport = null,
-        private ?MessageBusInterface $bus = null,
-        ?string $from = null,
-        private ?Envelope $envelope = null,
-    ) {
+    public function __construct(?TransportInterface $transport = null, ?MessageBusInterface $bus = null, ?string $from = null, ?Envelope $envelope = null)
+    {
         if (null === $transport && null === $bus) {
             throw new LogicException(\sprintf('"%s" needs a Transport or a Bus but both cannot be "null".', static::class));
         }
 
+        $this->transport = $transport;
+        $this->bus = $bus;
         $this->from = $from ?: $envelope?->getSender();
+        $this->envelope = $envelope;
     }
 
     /**
@@ -54,7 +56,7 @@ class EmailChannel implements ChannelInterface
             $message = $notification->asEmailMessage($recipient, $transportName);
         }
 
-        $message ??= EmailMessage::fromNotification($notification, $recipient);
+        $message ??= EmailMessage::fromNotification($notification, $recipient, $transportName);
         $email = $message->getMessage();
         if ($email instanceof Email) {
             if (!$email->getFrom()) {

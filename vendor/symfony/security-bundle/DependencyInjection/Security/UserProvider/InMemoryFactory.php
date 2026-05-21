@@ -11,7 +11,6 @@
 
 namespace Symfony\Bundle\SecurityBundle\DependencyInjection\Security\UserProvider;
 
-use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -25,7 +24,10 @@ use Symfony\Component\DependencyInjection\Parameter;
  */
 class InMemoryFactory implements UserProviderFactoryInterface
 {
-    public function create(ContainerBuilder $container, string $id, array $config): void
+    /**
+     * @return void
+     */
+    public function create(ContainerBuilder $container, string $id, array $config)
     {
         $definition = $container->setDefinition($id, new ChildDefinition('security.user.provider.in_memory'));
         $defaultPassword = new Parameter('container.build_id');
@@ -38,19 +40,23 @@ class InMemoryFactory implements UserProviderFactoryInterface
         $definition->addArgument($users);
     }
 
-    public function getKey(): string
+    /**
+     * @return string
+     */
+    public function getKey()
     {
         return 'memory';
     }
 
     /**
-     * @param ArrayNodeDefinition $node
+     * @return void
      */
-    public function addConfiguration(NodeDefinition $node): void
+    public function addConfiguration(NodeDefinition $node)
     {
         $node
+            ->fixXmlConfig('user')
             ->children()
-                ->arrayNode('users', 'user')
+                ->arrayNode('users')
                     ->useAttributeAsKey('identifier')
                     ->normalizeKeys(false)
                     ->prototype('array')

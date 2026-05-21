@@ -6,7 +6,7 @@ The Notifier component sends notifications via one or more channels (email, SMS,
 Sponsor
 -------
 
-Help Symfony by [sponsoring][3] its development!
+Help Symfony by [sponsoring][1] its development!
 
 Resources
 ---------
@@ -17,4 +17,4 @@ Resources
    [send Pull Requests](https://github.com/symfony/symfony/pulls)
    in the [main Symfony repository](https://github.com/symfony/symfony)
 
-[3]: https://symfony.com/sponsor
+[1]: https://symfony.com/sponsor

@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Security\Http\Firewall\ExceptionListener;
+use Symfony\Component\Security\Http\Firewall\FirewallListenerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -31,19 +32,25 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 class Firewall implements EventSubscriberInterface
 {
+    private FirewallMapInterface $map;
+    private EventDispatcherInterface $dispatcher;
+
     /**
      * @var \SplObjectStorage<Request, ExceptionListener>
      */
     private \SplObjectStorage $exceptionListeners;
 
-    public function __construct(
-        private FirewallMapInterface $map,
-        private EventDispatcherInterface $dispatcher,
-    ) {
+    public function __construct(FirewallMapInterface $map, EventDispatcherInterface $dispatcher)
+    {
+        $this->map = $map;
+        $this->dispatcher = $dispatcher;
         $this->exceptionListeners = new \SplObjectStorage();
     }
 
-    public function onKernelRequest(RequestEvent $event): void
+    /**
+     * @return void
+     */
+    public function onKernelRequest(RequestEvent $event)
     {
         if (!$event->isMainRequest()) {
             return;
@@ -62,14 +69,16 @@ class Firewall implements EventSubscriberInterface
         }
 
         // Authentication listeners are pre-sorted by SortFirewallListenersPass
-        $authenticationListeners = static function () use ($authenticationListeners, $logoutListener) {
+        $authenticationListeners = function () use ($authenticationListeners, $logoutListener) {
             if (null !== $logoutListener) {
-                $logoutListenerPriority = $logoutListener::getPriority();
+                $logoutListenerPriority = $this->getListenerPriority($logoutListener);
             }
 
             foreach ($authenticationListeners as $listener) {
+                $listenerPriority = $this->getListenerPriority($listener);
+
                 // Yielding the LogoutListener at the correct position
-                if (null !== $logoutListener && $listener::getPriority() < $logoutListenerPriority) {
+                if (null !== $logoutListener && $listenerPriority < $logoutListenerPriority) {
                     yield $logoutListener;
                     $logoutListener = null;
                 }
@@ -86,7 +95,10 @@ class Firewall implements EventSubscriberInterface
         $this->callListeners($event, $authenticationListeners());
     }
 
-    public function onKernelFinishRequest(FinishRequestEvent $event): void
+    /**
+     * @return void
+     */
+    public function onKernelFinishRequest(FinishRequestEvent $event)
     {
         $request = $event->getRequest();
 
@@ -96,7 +108,10 @@ class Firewall implements EventSubscriberInterface
         }
     }
 
-    public static function getSubscribedEvents(): array
+    /**
+     * @return array
+     */
+    public static function getSubscribedEvents()
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 8],
@@ -104,18 +119,26 @@ class Firewall implements EventSubscriberInterface
         ];
     }
 
-    protected function callListeners(RequestEvent $event, iterable $listeners): void
+    /**
+     * @return void
+     */
+    protected function callListeners(RequestEvent $event, iterable $listeners)
     {
         foreach ($listeners as $listener) {
-            if (false === $listener->supports($event->getRequest())) {
-                continue;
+            if (!$listener instanceof FirewallListenerInterface) {
+                $listener($event);
+            } elseif (false !== $listener->supports($event->getRequest())) {
+                $listener->authenticate($event);
             }
-
-            $listener->authenticate($event);
 
             if ($event->hasResponse()) {
                 break;
             }
         }
+    }
+
+    private function getListenerPriority(object $logoutListener): int
+    {
+        return $logoutListener instanceof FirewallListenerInterface ? $logoutListener->getPriority() : 0;
     }
 }

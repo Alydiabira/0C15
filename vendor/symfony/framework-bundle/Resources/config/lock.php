@@ -12,7 +12,6 @@
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Lock\Serializer\LockKeyNormalizer;
 use Symfony\Component\Lock\Store\CombinedStore;
 use Symfony\Component\Lock\Strategy\ConsensusStrategy;
 
@@ -27,8 +26,5 @@ return static function (ContainerConfigurator $container) {
             ->args([abstract_arg('Store')])
             ->call('setLogger', [service('logger')->ignoreOnInvalid()])
             ->tag('monolog.logger', ['channel' => 'lock'])
-
-        ->set('serializer.normalizer.lock_key', LockKeyNormalizer::class)
-            ->tag('serializer.normalizer', ['built_in' => true, 'priority' => -880])
     ;
 };

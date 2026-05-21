@@ -14,6 +14,7 @@ namespace Symfony\Bundle\FrameworkBundle\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Resource\SelfCheckingResourceChecker;
 use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel;
@@ -30,9 +31,14 @@ abstract class KernelTestCase extends TestCase
     use MailerAssertionsTrait;
     use NotificationAssertionsTrait;
 
-    protected static ?string $class = null;
-    protected static ?KernelInterface $kernel = null;
-    protected static bool $booted = false;
+    protected static $class;
+
+    /**
+     * @var KernelInterface
+     */
+    protected static $kernel;
+
+    protected static $booted = false;
 
     private static bool $kernelHasBeenRebooted = false;
 
@@ -104,8 +110,10 @@ abstract class KernelTestCase extends TestCase
      * used by other services.
      *
      * Using this method is the best way to get a container from your test code.
+     *
+     * @return Container
      */
-    protected static function getContainer(): Container
+    protected static function getContainer(): ContainerInterface
     {
         if (!static::$booted) {
             static::bootKernel();
@@ -147,7 +155,7 @@ abstract class KernelTestCase extends TestCase
 
             $httpCacheDir = null;
             if ($container->has('http_cache')) {
-                $httpCacheDir = static::$kernel->getShareDir().'/http_cache';
+                $httpCacheDir = static::$kernel->getCacheDir().'/http_cache';
             }
 
             if ($container->has('services_resetter')) {

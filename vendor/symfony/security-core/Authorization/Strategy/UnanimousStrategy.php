@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Security\Core\Authorization\Strategy;
 
-use Symfony\Component\Security\Core\Authorization\AccessDecision;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 
 /**
@@ -25,12 +24,14 @@ use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
  */
 final class UnanimousStrategy implements AccessDecisionStrategyInterface, \Stringable
 {
-    public function __construct(
-        private bool $allowIfAllAbstainDecisions = false,
-    ) {
+    private bool $allowIfAllAbstainDecisions;
+
+    public function __construct(bool $allowIfAllAbstainDecisions = false)
+    {
+        $this->allowIfAllAbstainDecisions = $allowIfAllAbstainDecisions;
     }
 
-    public function decide(\Traversable $results, ?AccessDecision $accessDecision = null): bool
+    public function decide(\Traversable $results): bool
     {
         $grant = 0;
         foreach ($results as $result) {

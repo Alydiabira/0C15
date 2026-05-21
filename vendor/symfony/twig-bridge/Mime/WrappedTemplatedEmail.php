@@ -23,10 +23,13 @@ use Twig\Environment;
  */
 final class WrappedTemplatedEmail
 {
-    public function __construct(
-        private Environment $twig,
-        private TemplatedEmail $message,
-    ) {
+    private Environment $twig;
+    private TemplatedEmail $message;
+
+    public function __construct(Environment $twig, TemplatedEmail $message)
+    {
+        $this->twig = $twig;
+        $this->message = $message;
     }
 
     public function toName(): string
@@ -39,13 +42,12 @@ final class WrappedTemplatedEmail
      *                                 some Twig namespace for email images (e.g. '@email/images/logo.png').
      * @param string|null $contentType The media type (i.e. MIME type) of the image file (e.g. 'image/png').
      *                                 Some email clients require this to display embedded images.
-     * @param string|null $name        A custom file name that overrides the original name (filepath) of the image
      */
-    public function image(string $image, ?string $contentType = null, ?string $name = null): string
+    public function image(string $image, ?string $contentType = null): string
     {
         $file = $this->twig->getLoader()->getSourceContext($image);
         $body = $file->getPath() ? new File($file->getPath()) : $file->getCode();
-        $dataPart = (new DataPart($body, $name ?: $image, $contentType))->asInline();
+        $dataPart = (new DataPart($body, $image, $contentType))->asInline();
         $this->message->addPart($dataPart);
 
         return 'cid:'.$dataPart->getContentId();
@@ -92,7 +94,7 @@ final class WrappedTemplatedEmail
 
     public function getReturnPath(): string
     {
-        return $this->message->getReturnPath()?->toString() ?? '';
+        return $this->message->getReturnPath();
     }
 
     /**

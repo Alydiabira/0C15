@@ -21,7 +21,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 class AddSessionDomainConstraintPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container): void
+    /**
+     * @return void
+     */
+    public function process(ContainerBuilder $container)
     {
         if (!$container->hasParameter('session.storage.options') || !$container->has('security.http_utils')) {
             return;
@@ -38,7 +41,7 @@ class AddSessionDomainConstraintPass implements CompilerPassInterface
             $domainRegexp = (empty($sessionOptions['cookie_secure']) ? 'https?://' : 'https://').$domainRegexp;
         }
 
-        $container->getDefinition('security.http_utils')
+        $container->findDefinition('security.http_utils')
             ->addArgument(\sprintf('{^%s$}i', $domainRegexp))
             ->addArgument($secureDomainRegexp);
     }

@@ -12,7 +12,10 @@
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
 use Symfony\Component\Config\ConfigCache;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -36,9 +39,7 @@ trait BuildDebugContainerTrait
             return $this->container;
         }
 
-        $file = $kernel->isDebug() ? $kernel->getContainer()->getParameter('debug.container.dump') : false;
-
-        if (!$file || !(new ConfigCache($file, true))->isFresh()) {
+        if (!$kernel->isDebug() || !$kernel->getContainer()->getParameter('debug.container.dump') || !(new ConfigCache($kernel->getContainer()->getParameter('debug.container.dump'), true))->isFresh()) {
             $buildContainer = \Closure::bind(function () {
                 $this->initializeBundles();
 
@@ -56,14 +57,13 @@ trait BuildDebugContainerTrait
                 return $containerBuilder;
             }, $kernel, $kernel::class);
             $container = $buildContainer();
+            (new XmlFileLoader($container, new FileLocator()))->load($kernel->getContainer()->getParameter('debug.container.dump'));
+            $locatorPass = new ServiceLocatorTagPass();
+            $locatorPass->process($container);
 
-            $dumpedContainer = unserialize(file_get_contents(substr_replace($file, '.ser', -4)));
-            $container->setDefinitions($dumpedContainer->getDefinitions());
-            $container->setAliases($dumpedContainer->getAliases());
-
-            $parameterBag = $container->getParameterBag();
-            $parameterBag->clear();
-            $parameterBag->add($dumpedContainer->getParameterBag()->all());
+            $container->getCompilerPassConfig()->setBeforeOptimizationPasses([]);
+            $container->getCompilerPassConfig()->setOptimizationPasses([]);
+            $container->getCompilerPassConfig()->setBeforeRemovingPasses([]);
         }
 
         return $this->container = $container;

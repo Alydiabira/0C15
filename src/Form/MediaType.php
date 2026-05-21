@@ -22,8 +22,7 @@ class MediaType extends AbstractType
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titre',
-            ])
-        ;
+            ]);
 
         if ($options['is_admin']) {
             $builder
@@ -38,8 +37,7 @@ class MediaType extends AbstractType
                     'required' => false,
                     'class' => Album::class,
                     'choice_label' => 'name',
-                ])
-            ;
+                ]);
         }
     }
 

@@ -17,26 +17,36 @@ use Symfony\Component\Security\Core\User\UserInterface;
 /**
  * Base class for Token instances.
  *
+ * Note that the token's role names are decoupled from the user's roles on purpose: token roles describe
+ * the authentication context (e.g. a `SwitchUserToken` adds `ROLE_PREVIOUS_ADMIN`), not the user's
+ * permanent role assignment. This is why `setUser()` only updates the user reference and leaves the
+ * role names untouched. `ContextListener` is the component responsible for comparing the stored role
+ * names against `$user->getRoles()` and deauthenticating when they diverge.
+ *
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Johannes M. Schmitt <schmittjoh@gmail.com>
  */
 abstract class AbstractToken implements TokenInterface, \Serializable
 {
     private ?UserInterface $user = null;
-    private array $roleNames;
+    private array $roleNames = [];
     private array $attributes = [];
 
     /**
      * @param string[] $roles An array of roles
+     *
+     * @throws \InvalidArgumentException
      */
     public function __construct(array $roles = [])
     {
-        $this->roleNames = $roles;
+        foreach ($roles as $role) {
+            $this->roleNames[] = $role;
+        }
     }
 
     public function getRoleNames(): array
     {
-        return $this->roleNames ??= $this->user?->getRoles() ?? [];
+        return $this->roleNames;
     }
 
     public function getUserIdentifier(): string
@@ -49,9 +59,22 @@ abstract class AbstractToken implements TokenInterface, \Serializable
         return $this->user;
     }
 
-    public function setUser(UserInterface $user): void
+    /**
+     * @return void
+     */
+    public function setUser(UserInterface $user)
     {
         $this->user = $user;
+    }
+
+    /**
+     * @return void
+     */
+    public function eraseCredentials()
+    {
+        if ($this->getUser() instanceof UserInterface) {
+            $this->getUser()->eraseCredentials();
+        }
     }
 
     /**
@@ -71,7 +94,7 @@ abstract class AbstractToken implements TokenInterface, \Serializable
      */
     public function __serialize(): array
     {
-        return [$this->user, true, null, $this->attributes, $this->getRoleNames()];
+        return [$this->user, true, null, $this->attributes, $this->roleNames];
     }
 
     /**
@@ -92,12 +115,7 @@ abstract class AbstractToken implements TokenInterface, \Serializable
      */
     public function __unserialize(array $data): void
     {
-        [$user, , , $this->attributes] = $data;
-
-        if (\array_key_exists(4, $data)) {
-            $this->roleNames = $data[4];
-        }
-
+        [$user, , , $this->attributes, $this->roleNames] = $data;
         $this->user = \is_string($user) ? new InMemoryUser($user, '', $this->roleNames, false) : $user;
     }
 
@@ -106,7 +124,10 @@ abstract class AbstractToken implements TokenInterface, \Serializable
         return $this->attributes;
     }
 
-    public function setAttributes(array $attributes): void
+    /**
+     * @return void
+     */
+    public function setAttributes(array $attributes)
     {
         $this->attributes = $attributes;
     }
@@ -125,7 +146,10 @@ abstract class AbstractToken implements TokenInterface, \Serializable
         return $this->attributes[$name];
     }
 
-    public function setAttribute(string $name, mixed $value): void
+    /**
+     * @return void
+     */
+    public function setAttribute(string $name, mixed $value)
     {
         $this->attributes[$name] = $value;
     }
@@ -135,7 +159,12 @@ abstract class AbstractToken implements TokenInterface, \Serializable
         $class = static::class;
         $class = substr($class, strrpos($class, '\\') + 1);
 
-        return \sprintf('%s(user="%s", roles="%s")', $class, $this->getUserIdentifier(), implode(', ', $this->getRoleNames()));
+        $roles = [];
+        foreach ($this->roleNames as $role) {
+            $roles[] = $role;
+        }
+
+        return \sprintf('%s(user="%s", roles="%s")', $class, $this->getUserIdentifier(), implode(', ', $roles));
     }
 
     /**

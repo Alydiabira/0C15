@@ -24,10 +24,10 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
  */
 abstract class Voter implements VoterInterface, CacheableVoterInterface
 {
-    public function vote(TokenInterface $token, mixed $subject, array $attributes, ?Vote $vote = null): int
+    public function vote(TokenInterface $token, mixed $subject, array $attributes): int
     {
         // abstain vote by default in case none of the attributes are supported
-        $voteResult = self::ACCESS_ABSTAIN;
+        $vote = self::ACCESS_ABSTAIN;
 
         foreach ($attributes as $attribute) {
             try {
@@ -43,27 +43,15 @@ abstract class Voter implements VoterInterface, CacheableVoterInterface
             }
 
             // as soon as at least one attribute is supported, default is to deny access
-            $voteResult = self::ACCESS_DENIED;
+            $vote = self::ACCESS_DENIED;
 
-            if (null !== $vote) {
-                $vote->result = $voteResult;
-            }
-
-            if ($this->voteOnAttribute($attribute, $subject, $token, $vote)) {
+            if ($this->voteOnAttribute($attribute, $subject, $token)) {
                 // grant access as soon as at least one attribute returns a positive response
-                if (null !== $vote) {
-                    $vote->result = self::ACCESS_GRANTED;
-                }
-
                 return self::ACCESS_GRANTED;
             }
         }
 
-        if (null !== $vote) {
-            $vote->result = $voteResult;
-        }
-
-        return $voteResult;
+        return $vote;
     }
 
     /**
@@ -102,7 +90,6 @@ abstract class Voter implements VoterInterface, CacheableVoterInterface
      *
      * @param TAttribute $attribute
      * @param TSubject   $subject
-     * @param Vote|null  $vote      Should be used to explain the vote
      */
-    abstract protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool;
+    abstract protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool;
 }

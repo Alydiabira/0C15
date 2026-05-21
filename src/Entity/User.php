@@ -13,19 +13,19 @@ class User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'boolean')]
     private bool $admin = false;
 
-    #[ORM\Column]
-    private ?string $name;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $name = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $description;
+    private ?string $description = null;
 
-    #[ORM\Column(length: 180, unique: true)]
+    #[ORM\Column(type: 'string', length: 180, unique: true)]
     private ?string $email = null;
 
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
@@ -41,15 +41,14 @@ class User
         return $this->id;
     }
 
-    public function getEmail(): ?string
+    public function isAdmin(): bool
     {
-        return $this->email;
+        return $this->admin;
     }
 
-    public function setEmail(string $email): static
+    public function setAdmin(bool $admin): static
     {
-        $this->email = $email;
-
+        $this->admin = $admin;
         return $this;
     }
 
@@ -58,9 +57,10 @@ class User
         return $this->name;
     }
 
-    public function setName(?string $name): void
+    public function setName(?string $name): static
     {
         $this->name = $name;
+        return $this;
     }
 
     public function getDescription(): ?string
@@ -68,9 +68,21 @@ class User
         return $this->description;
     }
 
-    public function setDescription(?string $description): void
+    public function setDescription(?string $description): static
     {
         $this->description = $description;
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+        return $this;
     }
 
     public function getMedias(): Collection
@@ -78,18 +90,22 @@ class User
         return $this->medias;
     }
 
-    public function setMedias(Collection $medias): void
+    public function addMedia(Media $media): static
     {
-        $this->medias = $medias;
+        if (!$this->medias->contains($media)) {
+            $this->medias->add($media);
+            $media->setUser($this);
+        }
+        return $this;
     }
 
-    public function isAdmin(): bool
+    public function removeMedia(Media $media): static
     {
-        return $this->admin;
-    }
-
-    public function setAdmin(bool $admin): void
-    {
-        $this->admin = $admin;
+        if ($this->medias->removeElement($media)) {
+            if ($media->getUser() === $this) {
+                $media->setUser(null);
+            }
+        }
+        return $this;
     }
 }

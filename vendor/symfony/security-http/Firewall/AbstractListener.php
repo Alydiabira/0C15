@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\Security\Http\Firewall;
 
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+
 /**
  * A base class for listeners that can tell whether they should authenticate incoming requests.
  *
@@ -18,6 +20,13 @@ namespace Symfony\Component\Security\Http\Firewall;
  */
 abstract class AbstractListener implements FirewallListenerInterface
 {
+    final public function __invoke(RequestEvent $event): void
+    {
+        if (false !== $this->supports($event->getRequest())) {
+            $this->authenticate($event);
+        }
+    }
+
     public static function getPriority(): int
     {
         return 0; // Default

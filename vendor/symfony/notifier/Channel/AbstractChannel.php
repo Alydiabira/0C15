@@ -20,8 +20,8 @@ use Symfony\Component\Notifier\Transport\TransportInterface;
  */
 abstract class AbstractChannel implements ChannelInterface
 {
-    protected ?TransportInterface $transport;
-    protected ?MessageBusInterface $bus;
+    protected $transport;
+    protected $bus;
 
     public function __construct(?TransportInterface $transport = null, ?MessageBusInterface $bus = null)
     {

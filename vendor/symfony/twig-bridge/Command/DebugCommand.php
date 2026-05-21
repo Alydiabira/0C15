@@ -36,28 +36,39 @@ use Twig\Loader\FilesystemLoader;
 #[AsCommand(name: 'debug:twig', description: 'Show a list of twig functions, filters, globals and tests')]
 class DebugCommand extends Command
 {
+    private Environment $twig;
+    private ?string $projectDir;
+    private array $bundlesMetadata;
+    private ?string $twigDefaultPath;
+
     /**
      * @var FilesystemLoader[]
      */
     private array $filesystemLoaders;
 
-    public function __construct(
-        private Environment $twig,
-        private ?string $projectDir = null,
-        private array $bundlesMetadata = [],
-        private ?string $twigDefaultPath = null,
-        private ?FileLinkFormatter $fileLinkFormatter = null,
-    ) {
+    private ?FileLinkFormatter $fileLinkFormatter;
+
+    public function __construct(Environment $twig, ?string $projectDir = null, array $bundlesMetadata = [], ?string $twigDefaultPath = null, ?FileLinkFormatter $fileLinkFormatter = null)
+    {
         parent::__construct();
+
+        $this->twig = $twig;
+        $this->projectDir = $projectDir;
+        $this->bundlesMetadata = $bundlesMetadata;
+        $this->twigDefaultPath = $twigDefaultPath;
+        $this->fileLinkFormatter = $fileLinkFormatter;
     }
 
-    protected function configure(): void
+    /**
+     * @return void
+     */
+    protected function configure()
     {
         $this
             ->setDefinition([
                 new InputArgument('name', InputArgument::OPTIONAL, 'The template name'),
                 new InputOption('filter', null, InputOption::VALUE_REQUIRED, 'Show details for all entries matching this filter'),
-                new InputOption('format', null, InputOption::VALUE_REQUIRED, \sprintf('The output format ("%s")', implode('", "', $this->getAvailableFormatOptions())), 'txt'),
+                new InputOption('format', null, InputOption::VALUE_REQUIRED, \sprintf('The output format ("%s")', implode('", "', $this->getAvailableFormatOptions())), 'text'),
             ])
             ->setHelp(<<<'EOF'
                 The <info>%command.name%</info> command outputs a list of twig functions,
@@ -94,7 +105,7 @@ class DebugCommand extends Command
         }
 
         match ($input->getOption('format')) {
-            'txt' => $name ? $this->displayPathsText($io, $name) : $this->displayGeneralText($io, $filter),
+            'text' => $name ? $this->displayPathsText($io, $name) : $this->displayGeneralText($io, $filter),
             'json' => $name ? $this->displayPathsJson($io, $name) : $this->displayGeneralJson($io, $filter),
             default => throw new InvalidArgumentException(\sprintf('Supported formats are "%s".', implode('", "', $this->getAvailableFormatOptions()))),
         };
@@ -154,7 +165,7 @@ class DebugCommand extends Command
                 [$namespace, $shortname] = $this->parseTemplateName($name);
                 $alternatives = $this->findAlternatives($shortname, $shortnames);
                 if (FilesystemLoader::MAIN_NAMESPACE !== $namespace) {
-                    $alternatives = array_map(fn ($shortname) => '@'.$namespace.'/'.$shortname, $alternatives);
+                    $alternatives = array_map(static fn ($shortname) => '@'.$namespace.'/'.$shortname, $alternatives);
                 }
             }
 
@@ -338,13 +349,15 @@ class DebugCommand extends Command
             }
 
             // format args
-            return array_map(function (\ReflectionParameter $param) {
+            $args = array_map(static function (\ReflectionParameter $param) {
                 if ($param->isDefaultValueAvailable()) {
                     return $param->getName().' = '.json_encode($param->getDefaultValue());
                 }
 
                 return $param->getName();
             }, $args);
+
+            return $args;
         }
 
         return null;
@@ -406,6 +419,7 @@ class DebugCommand extends Command
         }
 
         if ($notFoundBundles = array_diff_key($bundleNames, $this->bundlesMetadata)) {
+            $alternatives = [];
             foreach ($notFoundBundles as $notFoundBundle => $path) {
                 $alternatives[$path] = $this->findAlternatives($notFoundBundle, array_keys($this->bundlesMetadata));
             }
@@ -530,7 +544,7 @@ class DebugCommand extends Command
         }
 
         $threshold = 1e3;
-        $alternatives = array_filter($alternatives, fn ($lev) => $lev < 2 * $threshold);
+        $alternatives = array_filter($alternatives, static fn ($lev) => $lev < 2 * $threshold);
         ksort($alternatives, \SORT_NATURAL | \SORT_FLAG_CASE);
 
         return array_keys($alternatives);
@@ -576,12 +590,15 @@ class DebugCommand extends Command
 
     private function getFileLink(string $absolutePath): string
     {
-        return (string) $this->fileLinkFormatter?->format($absolutePath, 1);
+        if (null === $this->fileLinkFormatter) {
+            return '';
+        }
+
+        return (string) $this->fileLinkFormatter->format($absolutePath, 1);
     }
 
-    /** @return string[] */
     private function getAvailableFormatOptions(): array
     {
-        return ['txt', 'json'];
+        return ['text', 'json'];
     }
 }

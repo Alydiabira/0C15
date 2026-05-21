@@ -147,23 +147,24 @@ class Link implements EvolvableLinkInterface
     // Extra relations
     public const REL_MERCURE = 'mercure';
 
+    private string $href = '';
+
     /**
      * @var string[]
      */
     private array $rel = [];
 
     /**
-     * @var array<string, scalar|\Stringable|list<scalar|\Stringable>>
+     * @var array<string, string|bool|string[]>
      */
     private array $attributes = [];
 
-    public function __construct(
-        ?string $rel = null,
-        private string $href = '',
-    ) {
+    public function __construct(?string $rel = null, string $href = '')
+    {
         if (null !== $rel) {
             $this->rel[$rel] = $rel;
         }
+        $this->href = $href;
     }
 
     public function getHref(): string
@@ -181,11 +182,6 @@ class Link implements EvolvableLinkInterface
         return array_values($this->rel);
     }
 
-    /**
-     * Returns a list of attributes that describe the target URI.
-     *
-     * @return array<string, scalar|\Stringable|list<scalar|\Stringable>>
-     */
     public function getAttributes(): array
     {
         return $this->attributes;
@@ -215,14 +211,6 @@ class Link implements EvolvableLinkInterface
         return $that;
     }
 
-    /**
-     * Returns an instance with the specified attribute added.
-     *
-     * If the specified attribute is already present, it will be overwritten
-     * with the new value.
-     *
-     * @param scalar|\Stringable|list<scalar|\Stringable> $value
-     */
     public function withAttribute(string $attribute, string|\Stringable|int|float|bool|array $value): static
     {
         $that = clone $this;

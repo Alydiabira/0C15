@@ -22,8 +22,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 class UnusedTagsPass implements CompilerPassInterface
 {
     private const KNOWN_TAGS = [
-        'asset_mapper.compiler',
+        'annotations.cached_reader',
         'assets.package',
+        'asset_mapper.compiler',
         'auto_alias',
         'cache.pool',
         'cache.pool.clearer',
@@ -31,6 +32,7 @@ class UnusedTagsPass implements CompilerPassInterface
         'chatter.transport_factory',
         'config_cache.resource_checker',
         'console.command',
+        'container.do_not_inline',
         'container.env_var_loader',
         'container.env_var_processor',
         'container.excluded',
@@ -53,7 +55,6 @@ class UnusedTagsPass implements CompilerPassInterface
         'form.type_guesser',
         'html_sanitizer',
         'http_client.client',
-        'json_streamer.value_transformer',
         'kernel.cache_clearer',
         'kernel.cache_warmer',
         'kernel.event_listener',
@@ -70,25 +71,19 @@ class UnusedTagsPass implements CompilerPassInterface
         'mime.mime_type_guesser',
         'monolog.logger',
         'notifier.channel',
-        'object_mapper.condition_callable',
-        'object_mapper.transform_callable',
         'property_info.access_extractor',
-        'property_info.constructor_extractor',
         'property_info.initializable_extractor',
         'property_info.list_extractor',
         'property_info.type_extractor',
         'proxy',
         'remote_event.consumer',
         'routing.condition_service',
-        'routing.controller',
         'routing.expression_language_function',
         'routing.expression_language_provider',
         'routing.loader',
         'routing.route_loader',
         'scheduler.schedule_provider',
         'scheduler.task',
-        'security.access_token_handler.oidc.encryption_algorithm',
-        'security.access_token_handler.oidc.signature_algorithm',
         'security.authenticator.login_linker',
         'security.expression_language_provider',
         'security.remember_me_handler',
@@ -104,7 +99,6 @@ class UnusedTagsPass implements CompilerPassInterface
         'twig.extension',
         'twig.loader',
         'twig.runtime',
-        'validator.attribute_metadata',
         'validator.auto_mapper',
         'validator.constraint_validator',
         'validator.group_provider',
@@ -112,13 +106,16 @@ class UnusedTagsPass implements CompilerPassInterface
         'workflow',
     ];
 
-    public function process(ContainerBuilder $container): void
+    /**
+     * @return void
+     */
+    public function process(ContainerBuilder $container)
     {
         $tags = array_unique(array_merge($container->findTags(), self::KNOWN_TAGS));
 
         foreach ($container->findUnusedTags() as $tag) {
             // skip known tags
-            if (\in_array($tag, self::KNOWN_TAGS, true)) {
+            if (\in_array($tag, self::KNOWN_TAGS)) {
                 continue;
             }
 

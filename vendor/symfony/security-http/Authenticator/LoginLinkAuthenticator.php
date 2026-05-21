@@ -31,15 +31,18 @@ use Symfony\Component\Security\Http\LoginLink\LoginLinkHandlerInterface;
  */
 final class LoginLinkAuthenticator extends AbstractAuthenticator implements InteractiveAuthenticatorInterface
 {
+    private LoginLinkHandlerInterface $loginLinkHandler;
+    private HttpUtils $httpUtils;
+    private AuthenticationSuccessHandlerInterface $successHandler;
+    private AuthenticationFailureHandlerInterface $failureHandler;
     private array $options;
 
-    public function __construct(
-        private LoginLinkHandlerInterface $loginLinkHandler,
-        private HttpUtils $httpUtils,
-        private AuthenticationSuccessHandlerInterface $successHandler,
-        private AuthenticationFailureHandlerInterface $failureHandler,
-        array $options,
-    ) {
+    public function __construct(LoginLinkHandlerInterface $loginLinkHandler, HttpUtils $httpUtils, AuthenticationSuccessHandlerInterface $successHandler, AuthenticationFailureHandlerInterface $failureHandler, array $options)
+    {
+        $this->loginLinkHandler = $loginLinkHandler;
+        $this->httpUtils = $httpUtils;
+        $this->successHandler = $successHandler;
+        $this->failureHandler = $failureHandler;
         $this->options = $options + ['check_post_only' => false];
     }
 
@@ -51,7 +54,7 @@ final class LoginLinkAuthenticator extends AbstractAuthenticator implements Inte
 
     public function authenticate(Request $request): Passport
     {
-        if (!$username = $request->query->get('user') ?? (!\in_array($request->getMethod(), ['GET', 'HEAD'], true) ? $request->request->get('user') : null)) {
+        if (!$username = $request->get('user')) {
             throw new InvalidLoginLinkAuthenticationException('Missing user from link.');
         }
 
