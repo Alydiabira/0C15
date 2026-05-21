@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit63a22298449e1115cb43a18cd2b78e02
+class ComposerStaticInitfff69c113fd7affc8006e8d2fd2afaab
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -541,12 +541,15 @@ class ComposerStaticInit63a22298449e1115cb43a18cd2b78e02
         'App\\Controller\\Admin\\MediaController' => __DIR__ . '/../..' . '/src/Controller/Admin/MediaController.php',
         'App\\Controller\\Admin\\SecurityController' => __DIR__ . '/../..' . '/src/Controller/Admin/SecurityController.php',
         'App\\Controller\\HomeController' => __DIR__ . '/../..' . '/src/Controller/HomeController.php',
+        'App\\Controller\\SecurityController' => __DIR__ . '/../..' . '/src/Controller/SecurityController.php',
+        'App\\Entity\\AdminUser' => __DIR__ . '/../..' . '/src/Entity/AdminUser.php',
         'App\\Entity\\Album' => __DIR__ . '/../..' . '/src/Entity/Album.php',
         'App\\Entity\\Media' => __DIR__ . '/../..' . '/src/Entity/Media.php',
         'App\\Entity\\User' => __DIR__ . '/../..' . '/src/Entity/User.php',
         'App\\Form\\AlbumType' => __DIR__ . '/../..' . '/src/Form/AlbumType.php',
         'App\\Form\\MediaType' => __DIR__ . '/../..' . '/src/Form/MediaType.php',
         'App\\Kernel' => __DIR__ . '/../..' . '/src/Kernel.php',
+        'App\\Repository\\AdminUserRepository' => __DIR__ . '/../..' . '/src/Repository/AdminUserRepository.php',
         'App\\Repository\\AlbumRepository' => __DIR__ . '/../..' . '/src/Repository/AlbumRepository.php',
         'App\\Repository\\MediaRepository' => __DIR__ . '/../..' . '/src/Repository/MediaRepository.php',
         'App\\Repository\\UserRepository' => __DIR__ . '/../..' . '/src/Repository/UserRepository.php',
@@ -6825,9 +6828,9 @@ class ComposerStaticInit63a22298449e1115cb43a18cd2b78e02
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit63a22298449e1115cb43a18cd2b78e02::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit63a22298449e1115cb43a18cd2b78e02::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit63a22298449e1115cb43a18cd2b78e02::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitfff69c113fd7affc8006e8d2fd2afaab::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitfff69c113fd7affc8006e8d2fd2afaab::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitfff69c113fd7affc8006e8d2fd2afaab::$classMap;
 
         }, null, ClassLoader::class);
     }
