@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
     bootstrap="vendor/autoload.php"
     colors="true"
     cacheDirectory=".phpunit.cache"
-    backupGlobals="false"
-    backupStaticAttributes="false"
 >
-    <php>
-        <env name="APP_ENV" value="test"/>
-        <env name="KERNEL_CLASS" value="App\Kernel"/>
-        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
-    </php>
 
     <testsuites>
         <testsuite name="Project Test Suite">
@@ -21,9 +13,14 @@
         </testsuite>
     </testsuites>
 
-    <coverage>
-        <report>
-            <html outputDirectory="coverage"/>
-        </report>
-    </coverage>
+    <php>
+        <env name="KERNEL_CLASS" value="App\Kernel" />
+        <env name="APP_ENV" value="test" />
+        <env name="APP_DEBUG" value="1" />
+        <env name="DATABASE_URL"
+            value="mysql://root:root@127.0.0.1:8889/ina?serverVersion=8.0.35&amp;charset=utf8mb4" />
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
+        <server name="SHELL_VERBOSITY" value="-1" />
+    </php>
+
 </phpunit>

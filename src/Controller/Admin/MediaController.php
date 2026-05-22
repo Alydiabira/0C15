@@ -19,7 +19,6 @@ class MediaController extends AbstractController
     {
         $page = $request->query->getInt('page', 1);
 
-        // 🔐 Si ce n’est pas Ina → ne voir que ses propres médias
         $criteria = [];
         if (!$this->isGranted('ROLE_INA')) {
             $criteria['user'] = $this->getUser();
@@ -59,11 +58,13 @@ class MediaController extends AbstractController
                 $media->setUser($this->getUser());
             }
 
-            // Upload du fichier
-            if ($media->getFile()) {
-                $filename = md5(uniqid()) . '.' . $media->getFile()->guessExtension();
+            // ✅ Upload du fichier (version correcte)
+            $file = $form->get('file')->getData();
+
+            if ($file) {
+                $filename = md5(uniqid()) . '.' . $file->guessExtension();
+                $file->move('uploads/', $filename);
                 $media->setPath('uploads/' . $filename);
-                $media->getFile()->move('uploads/', $filename);
             }
 
             $em->persist($media);
@@ -80,7 +81,6 @@ class MediaController extends AbstractController
     #[Route('/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(Request $request, Media $media, EntityManagerInterface $em): Response
     {
-        // 🔐 Un invité ne peut supprimer que ses propres médias
         if ($media->getUser() !== $this->getUser() && !$this->isGranted('ROLE_INA')) {
             throw $this->createAccessDeniedException();
         }

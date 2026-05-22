@@ -11,13 +11,9 @@ class MediaUploadTest extends WebTestCase
 {
     private EntityManagerInterface $em;
 
-    protected function setUp(): void
+    private function initEm(): void
     {
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-
-        // Accès à Doctrine
-        $this->em = $client->getContainer()->get('doctrine')->getManager();
+        $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
     private function getIna(): User
@@ -28,9 +24,11 @@ class MediaUploadTest extends WebTestCase
     public function testUploadValidImage(): void
     {
         $client = static::createClient();
-        $client->loginUser($this->getIna());
+        $this->initEm();
 
-        // Fichier de test
+        $ina = $this->getIna();
+        $client->loginUser($ina);
+
         $file = new UploadedFile(
             __DIR__ . '/files/test.jpg',
             'test.jpg',
@@ -39,7 +37,12 @@ class MediaUploadTest extends WebTestCase
             true
         );
 
-        $client->request('POST', '/admin/media/add', [], [
+        $client->request('POST', '/admin/media/add', [
+            'media' => [
+                'title' => 'Test upload',
+                'user' => $ina->getId(),
+            ]
+        ], [
             'media[file]' => $file
         ]);
 

@@ -12,12 +12,9 @@ class MediaPermissionsTest extends WebTestCase
 {
     private EntityManagerInterface $em;
 
-    protected function setUp(): void
+    private function initEm(): void
     {
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-
-        $this->em = $client->getContainer()->get('doctrine')->getManager();
+        $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
     private function getIna(): User
@@ -48,13 +45,15 @@ class MediaPermissionsTest extends WebTestCase
     public function testGuestCannotAccessOthersMedia(): void
     {
         $client = static::createClient();
+        $this->initEm(); // container OK après createClient()
+
         $guest = $this->getGuest();
         $client->loginUser($guest);
 
         $media = $this->getMediaOwnedByAnotherUser($guest);
 
         $client->request('POST', "/admin/media/delete/{$media->getId()}", [
-            '_token' => 'invalid' // peu importe, la permission bloque avant
+            '_token' => 'invalid'
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
@@ -63,6 +62,8 @@ class MediaPermissionsTest extends WebTestCase
     public function testInaCanAccessAllMedia(): void
     {
         $client = static::createClient();
+        $this->initEm();
+
         $client->loginUser($this->getIna());
 
         $media = $this->getAnyMedia();
