@@ -26,6 +26,7 @@ class MediaType extends AbstractType
                     new Image([
                         'maxSize' => '2M',
                         'mimeTypes' => [
+                            'image/jpg',
                             'image/jpeg',
                             'image/png',
                             'image/webp',

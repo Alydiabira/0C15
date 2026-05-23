@@ -29,22 +29,32 @@ class MediaUploadTest extends WebTestCase
         $ina = $this->getIna();
         $client->loginUser($ina);
 
+        // Fichier de test
         $file = new UploadedFile(
-            __DIR__ . '/files/test.jpg',
-            'test.jpg',
+            __DIR__ . '/files/0001.jpg',
+            '0001.jpg',
             'image/jpeg',
             null,
             true
         );
 
-        $client->request('POST', '/admin/media/add', [
-            'media' => [
-                'title' => 'Test upload',
-                'user' => $ina->getId(),
+        // Soumission correcte du formulaire
+        $client->request(
+            'POST',
+            '/admin/media/add',
+            [
+                'media' => [
+                    'title' => 'Test upload',
+                    'user' => $ina->getId(),   // IMPORTANT : dans media[user]
+                    'album' => null,           // optionnel mais propre
+                ]
+            ],
+            [
+                'media' => [
+                    'file' => $file
+                ]
             ]
-        ], [
-            'media[file]' => $file
-        ]);
+        );
 
         $this->assertResponseRedirects('/admin/media');
     }
