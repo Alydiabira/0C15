@@ -5,38 +5,19 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
-class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
+/**
+ * @extends ServiceEntityRepository<User>
+ *
+ * @method User|null find($id, $lockMode = null, $lockVersion = null)
+ * @method User|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
+ * @method User[]    findAll()
+ * @method User[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
+ */
+class UserRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, User::class);
-    }
-
-    public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
-    {
-        if (!$user instanceof User) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
-        }
-
-        $user->setPassword($newHashedPassword);
-        $this->getEntityManager()->persist($user);
-        $this->getEntityManager()->flush();
-    }
-
-    /**
-     * Retourne l'utilisateur Ina (type = 'ina')
-     */
-    public function findIna(): ?User
-    {
-        return $this->createQueryBuilder('u')
-            ->andWhere('u.type = :type')
-            ->setParameter('type', 'ina')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
     }
 }

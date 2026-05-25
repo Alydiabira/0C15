@@ -1,14 +1,20 @@
 <?php
 
+/**
+ * @property int|null $id
+ */
+
 namespace App\Entity;
 
 use App\Repository\MediaRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MediaRepository::class)]
 class Media
 {
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -25,10 +31,16 @@ class Media
     #[ORM\Column(type: 'string', length: 255)]
     private string $path = '';
 
+    #[Assert\NotBlank(message: "Le titre est obligatoire.")]
     #[ORM\Column(type: 'string', length: 255)]
     private string $title = '';
 
-    // Non persisté : utilisé uniquement pour l'upload
+    /** @var UploadedFile|null */
+    #[Assert\File(
+        maxSize: "2M",
+        mimeTypes: ["image/jpeg", "image/png"],
+        mimeTypesMessage: "Le fichier doit être une image JPEG ou PNG."
+    )]
     private ?UploadedFile $file = null;
 
     public function getId(): ?int
@@ -80,6 +92,7 @@ class Media
         return $this;
     }
 
+    /** @return UploadedFile|null */
     public function getFile(): ?UploadedFile
     {
         return $this->file;

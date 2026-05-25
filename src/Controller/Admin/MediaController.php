@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
 
 #[Route('/admin/media')]
 class MediaController extends AbstractController
@@ -40,7 +42,7 @@ class MediaController extends AbstractController
         ]);
     }
 
-    #[Route('/add', name: 'admin_media_add', methods: ['GET', 'POST'])]
+
     public function add(Request $request, EntityManagerInterface $em): Response
     {
         $media = new Media();
@@ -54,14 +56,15 @@ class MediaController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
 
             // 🔐 Un invité ne peut ajouter un média que pour lui-même
-            if (!$this->isGranted('ROLE_INA')) {
-                $media->setUser($this->getUser());
+            $user = $this->getUser();
+            if (!$this->isGranted('ROLE_INA') && $user instanceof \App\Entity\User) {
+                $media->setUser($user);
             }
 
-            // ✅ Upload du fichier (version correcte)
+            /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
-            if ($file) {
+            if ($file instanceof UploadedFile) {
                 $filename = md5(uniqid()) . '.' . $file->guessExtension();
                 $file->move('uploads/', $filename);
                 $media->setPath('uploads/' . $filename);
@@ -78,16 +81,20 @@ class MediaController extends AbstractController
         ]);
     }
 
-    #[Route('/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
+
     public function delete(Request $request, Media $media, EntityManagerInterface $em): Response
     {
-        if ($media->getUser() !== $this->getUser() && !$this->isGranted('ROLE_INA')) {
+        $user = $this->getUser();
+
+        if ($media->getUser() !== $user && !$this->isGranted('ROLE_INA')) {
             throw $this->createAccessDeniedException();
         }
 
-        if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $request->request->get('_token'))) {
+        $token = (string) $request->request->get('_token');
 
-            if (file_exists($media->getPath())) {
+        if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $token)) {
+
+            if (is_file($media->getPath())) {
                 unlink($media->getPath());
             }
 

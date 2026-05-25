@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @property int|null $id
+ * @property string[] $roles
+ */
+
 namespace App\Entity;
 
 use App\Repository\AdminUserRepository;
@@ -20,6 +25,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private string $email = '';
 
+    /** @var string[] */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
@@ -47,16 +53,15 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
+    /** @return string[] */
     public function getRoles(): array
     {
         $roles = $this->roles;
-
-        // Tous les admins ont au moins ROLE_ADMIN
         $roles[] = 'ROLE_ADMIN';
-
         return array_unique($roles);
     }
 
+    /** @param string[] $roles */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
@@ -74,8 +79,5 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-        // Rien à effacer
-    }
+    public function eraseCredentials(): void {}
 }

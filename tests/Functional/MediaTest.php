@@ -8,6 +8,6 @@ class MediaTest extends WebTestCase
 {
     public function testDummy(): void
     {
-        $this->assertTrue(true);
+        self::assertSame(1, 1);
     }
 }

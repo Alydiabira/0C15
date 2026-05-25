@@ -43,11 +43,9 @@ class InviteController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            // Hash du mot de passe
-            $hashedPassword = $passwordHasher->hashPassword(
-                $invite,
-                $form->get('plainPassword')->getData()
-            );
+            $plainPassword = (string) $form->get('plainPassword')->getData();
+            $hashedPassword = $passwordHasher->hashPassword($invite, $plainPassword);
+
             $invite->setPassword($hashedPassword);
 
             $em->persist($invite);
@@ -77,7 +75,9 @@ class InviteController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_INA');
 
-        if ($this->isCsrfTokenValid('delete_invite_' . $user->getId(), $request->request->get('_token'))) {
+        $token = (string) $request->request->get('_token');
+
+        if ($this->isCsrfTokenValid('delete_invite_' . $user->getId(), $token)) {
             $em->remove($user);
             $em->flush();
         }

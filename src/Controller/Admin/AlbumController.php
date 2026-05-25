@@ -68,7 +68,9 @@ class AlbumController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_INA');
 
-        if ($this->isCsrfTokenValid('delete_album_' . $album->getId(), $request->request->get('_token'))) {
+        $token = (string) $request->request->get('_token');
+
+        if ($this->isCsrfTokenValid('delete_album_' . $album->getId(), $token)) {
             $em->remove($album);
             $em->flush();
         }

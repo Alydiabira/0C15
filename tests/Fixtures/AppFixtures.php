@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests\Functional;
+namespace App\Tests\Fixtures;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -8,6 +8,6 @@ class AppFixtures extends WebTestCase
 {
     public function testDummy(): void
     {
-        $this->assertTrue(true);
+        self::assertSame(1, 1);
     }
 }
