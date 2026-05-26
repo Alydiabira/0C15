@@ -1,9 +1,8 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin.html.twig' %}
 
-{% block title %}Connexion Admin
-{% endblock %}
 
-{% block body %}
+
+{% block admin %}
 	<form method="post" action="{{ path('admin_login') }}">
 
 		{% if error %}

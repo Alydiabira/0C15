@@ -1,105 +1,213 @@
 * {
-    font-family: "DM Mono", monospace;
+  font-family: "DM Mono", monospace;
 }
 
-html, body {
-    background: #DFECF0;
+html,
+body {
+  background: #dfecf0;
 }
 
 header nav .nav-link {
-    font-size: 14px;
-    color: #333;
-    font-weight: 300;
+  font-size: 14px;
+  color: #333;
+  font-weight: 300;
 }
 
 .home-img {
-    aspect-ratio: 60/76;
-    object-fit: cover;
+  aspect-ratio: 60/76;
+  object-fit: cover;
 }
 
 h2 {
-    font-weight: 400;
-    font-size: 24px;
-    text-transform: uppercase;
-    margin: 0;
+  font-weight: 400;
+  font-size: 24px;
+  text-transform: uppercase;
+  margin: 0;
 }
 
-.home-title, h3 {
-    font-size: 24px;
-    font-weight: 400;
-    line-height: 31.25px;
-    text-transform: uppercase;
+.home-title,
+h3 {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 31.25px;
+  text-transform: uppercase;
 }
 
 .about-title {
-    text-align: left;
+  text-align: left;
 }
 
 p {
-    font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", sans-serif;
 }
 
 .btn {
-    border: 1px solid #333;
-    border-radius: 0;
-    font-size: 14px;
-    font-family: "DM Sans", sans-serif;
+  border: 1px solid #333;
+  border-radius: 0;
+  font-size: 14px;
+  font-family: "DM Sans", sans-serif;
 }
 
-.btn:hover, .btn.active {
-    color: white;
-    background: #333;
+.btn:hover,
+.btn.active {
+  color: white;
+  background: #333;
 }
 
 .home-description {
-    font-weight: 300;
-    font-size: 18px;
-    text-align: right;
-    line-height: 23.5px;
-    max-width: 430px;
-    margin: 0;
+  font-weight: 300;
+  font-size: 18px;
+  text-align: right;
+  line-height: 23.5px;
+  max-width: 430px;
+  margin: 0;
 }
 
 .about-description {
-    font-family: "DM Sans", sans-serif;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 20.83px;
-    text-align: left;
-    max-width: 341px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20.83px;
+  text-align: left;
+  max-width: 341px;
 }
 
 a {
-    color: #333;
-    font-family: "DM Sans", sans-serif;
+  color: #333;
+  font-family: "DM Sans", sans-serif;
 }
 
 .guest {
-    border-top: 1px solid #333;
+  border-top: 1px solid #333;
 }
 
 .guest h4 {
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 23.44px;
-    text-transform: uppercase;
-    margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 23.44px;
+  text-transform: uppercase;
+  margin: 0;
 }
 
 .media img {
-    aspect-ratio: 404/524;
-    object-fit: cover;
+  aspect-ratio: 404/524;
+  object-fit: cover;
 }
 
 .media-title {
-    font-size: 14px;
-    font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-family: "DM Sans", sans-serif;
 }
 
 footer {
-    font-family: "DM Sans", sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 18.23px;
-    text-align: right;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18.23px;
+  text-align: right;
+}
+
+/* ============================
+   LOGIN PAGE
+   ============================ */
+
+/* Layout global login */
+.login-container {
+  display: flex;
+  height: 100vh;
+  background: #dfecf0;
+}
+
+/* Colonne gauche : image */
+.login-left {
+  flex: 1;
+  background-image: url("/images/login-dunes.jpg"); /* remplace par ta photo */
+  background-size: cover;
+  background-position: center;
+}
+
+/* Colonne droite : formulaire */
+.login-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+}
+
+/* Formulaire */
+.login-form {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-form h1 {
+  font-family: "DM Mono", monospace;
+  font-size: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+/* Labels */
+.login-form label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 300;
+  font-family: "DM Sans", sans-serif;
+  color: #333;
+}
+
+/* Inputs */
+.login-form input[type="email"],
+.login-form input[type="password"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #333;
+  border-radius: 0;
+  background: white;
+  font-size: 15px;
+  font-family: "DM Sans", sans-serif;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #111;
+}
+
+/* Checkbox */
+.login-form .checkbox label {
+  font-size: 14px;
+  font-family: "DM Sans", sans-serif;
+}
+
+/* Bouton */
+.login-form button[type="submit"] {
+  margin-top: 25px;
+  width: 100%;
+  padding: 12px;
+  background: #333;
+  border: 1px solid #333;
+  border-radius: 0;
+  color: white;
+  font-size: 14px;
+  font-family: "DM Sans", sans-serif;
+  cursor: pointer;
+}
+
+.login-form button:hover {
+  background: #111;
+}
+
+/* Message d’erreur */
+.alert-danger {
+  background: #fbeaea;
+  border: 1px solid #e4bcbc;
+  color: #a94442;
+  padding: 10px 14px;
+  border-radius: 0;
+  margin-bottom: 15px;
 }
