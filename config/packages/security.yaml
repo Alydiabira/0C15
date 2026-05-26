@@ -1,38 +1,55 @@
 security:
-    password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-            algorithm: auto
+  password_hashers:
+    Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+      algorithm: auto
 
-    providers:
-        app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: email
+  providers:
+    app_user_provider:
+      entity:
+        class: App\Entity\User
+        property: email
 
-    firewalls:
-        dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
+  firewalls:
+    dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
+      security: false
 
-        main:
-            lazy: true
-            provider: app_user_provider
+    # 🔐 Firewall ADMIN
+    admin:
+      pattern: ^/admin
+      provider: app_user_provider
+      lazy: true
 
-            custom_authenticator:
-                - App\Security\AppAuthenticator
+      form_login:
+        login_path: admin_login
+        check_path: admin_login
+        default_target_path: admin_album_index
 
-            remember_me:
-                secret: '%kernel.secret%'
-                lifetime: 604800
-                path: /
+      logout:
+        path: app_logout
+        target: /
 
-            logout:
-                path: app_logout
-                target: /
+    # 🔐 Firewall INVITÉS / FRONT
+    main:
+      lazy: true
+      provider: app_user_provider
 
-    role_hierarchy:
-        ROLE_INA: ROLE_USER
+      custom_authenticator:
+        - App\Security\AppAuthenticator
 
-    access_control:
-        - { path: ^/admin, roles: ROLE_INA }
-        - { path: ^/media, roles: ROLE_USER }
+      remember_me:
+        secret: "%kernel.secret%"
+        lifetime: 604800
+        path: /
+
+      logout:
+        path: app_logout
+        target: /
+
+  role_hierarchy:
+    ROLE_INA: ROLE_USER
+
+  access_control:
+    - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+    - { path: ^/admin, roles: ROLE_INA }
+    - { path: ^/media, roles: ROLE_USER }

@@ -1,65 +1,73 @@
 {% extends 'admin.html.twig' %}
 
+
 {% block admin %}
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>Medias</h1>
-        <a href="{{ path('admin_media_add') }}" class="btn btn-primary">Ajouter</a>
-    </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Titre</th>
-                {% if is_granted('ROLE_ADMIN') %}
-                    <th>Artiste</th>
-                    <th>Album</th>
-                {% endif %}
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for media in medias %}
-                <tr>
-                    <td><img src="{{ asset(media.path) }}" width="75" /></td>
-                    <td>{{ media.title }}</td>
-                    {% if is_granted('ROLE_ADMIN') %}
-                        <td>{{ media.user.name }}</td>
-                        <td>{{ media.album.name ?? '' }}</td>
-                    {% endif %}
-                    <td>
-                        <a href="{{ path('admin_media_delete', {id: media.id}) }}" class="btn btn-danger">Supprimer</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% set totalPages = (total / 50)|round(0, 'ceil') %}
+	<div class="container mt-4">
+		<h1 class="mb-4">Médias</h1>
 
-    <nav aria-label="Page navigation">
-        <ul class="pagination">
-            {% if page > 1 %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: 1}) }}">Première page</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: page - 1}) }}">Précédent</a>
-                </li>
-            {% endif %}
+		<div class="mb-3">
+			<a href="{{ path('admin_media_add') }}" class="btn btn-primary">Ajouter un média</a>
+		</div>
 
-            {% for i in range(max(1, page - 3), min(totalPages, page + 3)) %}
-                <li class="page-item {% if i == page %}active{% endif %}">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: i}) }}">{{ i }}</a>
-                </li>
-            {% endfor %}
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Image</th>
+					<th>Titre</th>
+					{% if is_granted('ROLE_INA') %}
+						<th>Artiste</th>
+						<th>Album</th>
+					{% endif %}
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for media in medias %}
+					<tr>
+						<td>
+							{% if media.path %}
+								<img src="/{{ media.path }}" alt="{{ media.title }}" style="max-height: 60px;">
+							{% endif %}
+						</td>
+						<td>{{ media.title }}</td>
 
-            {% if page < totalPages %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: page + 1}) }}">Suivant</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: totalPages}) }}">Dernière page</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+						{% if is_granted('ROLE_INA') %}
+							<td>{{ media.user.name ?? '' }}</td>
+							<td>{{ media.album.name ?? '' }}</td>
+						{% endif %}
+
+						<td>
+							{# Bouton Modifier #}
+							<a href="{{ path('admin_media_update', {id: media.id}) }}" class="btn btn-warning btn-sm">
+								Modifier
+							</a>
+
+							{# Formulaire Supprimer (POST + CSRF) #}
+							<form method="post" action="{{ path('admin_media_delete', {id: media.id}) }}" style="display:inline-block" onsubmit="return confirm('Supprimer ce média ?');">
+
+								<input type="hidden" name="_token" value="{{ csrf_token('delete_media_' ~ media.id) }}">
+
+								<button class="btn btn-danger btn-sm">
+									Supprimer
+								</button>
+							</form>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5">Aucun média trouvé.</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+		{# Pagination très simple #}
+		<nav aria-label="Pagination">
+			<ul class="pagination">
+				<li class="page-item active">
+					<span class="page-link">{{ page }}</span>
+				</li>
+			</ul>
+		</nav>
+	</div>
 {% endblock %}

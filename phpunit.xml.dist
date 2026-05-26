@@ -2,7 +2,7 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
-    bootstrap="vendor/autoload.php"
+    bootstrap="tests/bootstrap.php"
     colors="true"
     cacheDirectory=".phpunit.cache"
 >
@@ -22,5 +22,12 @@
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
         <server name="SHELL_VERBOSITY" value="-1" />
     </php>
+
+    <coverage>
+        <include>
+            <directory suffix=".php">src/</directory>
+        </include>
+    </coverage>
+
 
 </phpunit>

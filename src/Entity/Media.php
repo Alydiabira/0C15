@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @property int|null $id
- */
-
 namespace App\Entity;
 
 use App\Repository\MediaRepository;
@@ -14,14 +10,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: MediaRepository::class)]
 class Media
 {
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'medias')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?User $user = null;
 
     #[ORM\ManyToOne(targetEntity: Album::class)]
@@ -35,7 +30,6 @@ class Media
     #[ORM\Column(type: 'string', length: 255)]
     private string $title = '';
 
-    /** @var UploadedFile|null */
     #[Assert\File(
         maxSize: "2M",
         mimeTypes: ["image/jpeg", "image/png"],
@@ -92,7 +86,6 @@ class Media
         return $this;
     }
 
-    /** @return UploadedFile|null */
     public function getFile(): ?UploadedFile
     {
         return $this->file;

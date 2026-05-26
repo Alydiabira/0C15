@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-
 #[Route('/admin/media')]
 class MediaController extends AbstractController
 {
@@ -21,6 +20,7 @@ class MediaController extends AbstractController
     {
         $page = $request->query->getInt('page', 1);
 
+        // Si ce n'est pas INA → on ne voit que ses propres médias
         $criteria = [];
         if (!$this->isGranted('ROLE_INA')) {
             $criteria['user'] = $this->getUser();
@@ -33,7 +33,7 @@ class MediaController extends AbstractController
             25 * ($page - 1)
         );
 
-        $total = $mediaRepository->count([]);
+        $total = $mediaRepository->count($criteria);
 
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,
@@ -42,7 +42,7 @@ class MediaController extends AbstractController
         ]);
     }
 
-
+    #[Route('/add', name: 'admin_media_add', methods: ['GET', 'POST'])]
     public function add(Request $request, EntityManagerInterface $em): Response
     {
         $media = new Media();
@@ -55,10 +55,9 @@ class MediaController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            // 🔐 Un invité ne peut ajouter un média que pour lui-même
-            $user = $this->getUser();
-            if (!$this->isGranted('ROLE_INA') && $user instanceof \App\Entity\User) {
-                $media->setUser($user);
+            // Attribution automatique du user si ce n'est pas INA
+            if (!$this->isGranted('ROLE_INA')) {
+                $media->setUser($this->getUser());
             }
 
             /** @var UploadedFile|null $file */
@@ -81,12 +80,11 @@ class MediaController extends AbstractController
         ]);
     }
 
-
+    #[Route('/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(Request $request, Media $media, EntityManagerInterface $em): Response
     {
-        $user = $this->getUser();
-
-        if ($media->getUser() !== $user && !$this->isGranted('ROLE_INA')) {
+        // Vérification des permissions
+        if ($media->getUser() !== $this->getUser() && !$this->isGranted('ROLE_INA')) {
             throw $this->createAccessDeniedException();
         }
 
@@ -94,7 +92,8 @@ class MediaController extends AbstractController
 
         if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $token)) {
 
-            if (is_file($media->getPath())) {
+            // Suppression du fichier physique
+            if ($media->getPath() && is_file($media->getPath())) {
                 unlink($media->getPath());
             }
 
@@ -103,5 +102,47 @@ class MediaController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_media_index');
+    }
+
+    #[Route('/edit/{id}', name: 'admin_media_update', methods: ['GET', 'POST'])]
+    public function update(Request $request, Media $media, EntityManagerInterface $em): Response
+    {
+        // Vérification des permissions
+        if ($media->getUser() !== $this->getUser() && !$this->isGranted('ROLE_INA')) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => $this->isGranted('ROLE_INA'),
+        ]);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            /** @var UploadedFile|null $file */
+            $file = $form->get('file')->getData();
+
+            if ($file instanceof UploadedFile) {
+
+                // Supprimer l'ancien fichier si présent
+                if ($media->getPath() && is_file($media->getPath())) {
+                    unlink($media->getPath());
+                }
+
+                $filename = md5(uniqid()) . '.' . $file->guessExtension();
+                $file->move('uploads/', $filename);
+                $media->setPath('uploads/' . $filename);
+            }
+
+            $em->flush();
+
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        return $this->render('admin/media/update.html.twig', [
+            'form' => $form->createView(),
+            'media' => $media,
+        ]);
     }
 }

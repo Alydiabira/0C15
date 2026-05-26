@@ -11,50 +11,38 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\Image;
 
 class MediaType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $isAdmin = $options['is_admin'] ?? false;
+
+        if ($isAdmin) {
+            $builder->add('user', EntityType::class, [
+                'class' => User::class,
+                'choice_label' => 'name',
+                'label' => 'Artiste',
+                'required' => false,
+            ]);
+        }
+
         $builder
-            ->add('file', FileType::class, [
-                'label' => 'Image',
-                'mapped' => false, // important : le fichier n’est pas stocké directement dans l’entité
-                'required' => true,
-                'constraints' => [
-                    new Image([
-                        'maxSize' => '2M',
-                        'mimeTypes' => [
-                            'image/jpg',
-                            'image/jpeg',
-                            'image/png',
-                            'image/webp',
-                        ],
-                        'mimeTypesMessage' => 'Le fichier doit être une image valide (JPG, PNG ou WEBP).',
-                        'maxSizeMessage' => 'L’image ne doit pas dépasser 2 Mo.',
-                    ])
-                ],
+            ->add('album', EntityType::class, [
+                'class' => Album::class,
+                'choice_label' => 'name',
+                'label' => 'Album',
+                'required' => false,
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titre',
-            ]);
-
-        if ($options['is_admin']) {
-            $builder
-                ->add('user', EntityType::class, [
-                    'label' => 'Utilisateur',
-                    'required' => false,
-                    'class' => User::class,
-                    'choice_label' => 'name',
-                ])
-                ->add('album', EntityType::class, [
-                    'label' => 'Album',
-                    'required' => false,
-                    'class' => Album::class,
-                    'choice_label' => 'name',
-                ]);
-        }
+            ])
+            ->add('file', FileType::class, [
+                'label' => 'Image',
+                'mapped' => false,
+                'required' => false,
+            ])
+        ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

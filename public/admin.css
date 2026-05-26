@@ -1,0 +1,20 @@
+body {
+  background: #f8f9fa;
+  font-family: "DM Sans", sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.table th,
+.table td {
+  vertical-align: middle;
+}
+
+.btn {
+  border-radius: 0;
+}

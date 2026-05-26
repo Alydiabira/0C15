@@ -22,9 +22,7 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
     public const LOGIN_ROUTE = 'app_login';
 
-    public function __construct(private UrlGeneratorInterface $urlGenerator)
-    {
-    }
+    public function __construct(private UrlGeneratorInterface $urlGenerator) {}
 
     public function authenticate(Request $request): Passport
     {
@@ -44,14 +42,22 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
+        // Si un target path existe (page demandée avant login), on y retourne
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
             return new RedirectResponse($targetPath);
         }
 
-        // For example:
-        // return new RedirectResponse($this->urlGenerator->generate('some_route'));
-        throw new \Exception('TODO: provide a valid redirect inside '.__FILE__);
+        // 🔐 Redirection selon le rôle
+        $user = $token->getUser();
+
+        if (in_array('ROLE_INA', $user->getRoles())) {
+            return new RedirectResponse($this->urlGenerator->generate('admin_album_index'));
+        }
+
+        // Invité → redirection vers ses médias
+        return new RedirectResponse($this->urlGenerator->generate('media_index'));
     }
+
 
     protected function getLoginUrl(Request $request): string
     {
