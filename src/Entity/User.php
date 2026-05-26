@@ -21,6 +21,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private ?string $email = null;
 
+    /**
+     * @var array<int, string>
+     */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
@@ -84,6 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
 
+        // Ajout automatique du rôle INA
         if ($this->type === 'ina') {
             $roles[] = 'ROLE_INA';
         }
@@ -91,6 +95,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
+    /**
+     * @param array<int, string> $roles
+     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;

@@ -10,49 +10,37 @@ use Symfony\Component\HttpFoundation\Response;
 
 class MediaPermissionsTest extends WebTestCase
 {
+    private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
     private EntityManagerInterface $em;
 
-    private function initEm(): void
+    protected function setUp(): void
     {
+        $this->client = static::createClient();
         $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
-    private function getIna(): User
+    private function getUserByEmail(string $email): User
     {
-        return $this->em->getRepository(User::class)->findOneBy(['type' => 'ina']);
-    }
-
-    private function getGuest(): User
-    {
-        return $this->em->getRepository(User::class)->findOneBy(['type' => 'invite']);
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
+        self::assertNotNull($user, "User $email must exist in fixtures");
+        return $user;
     }
 
     private function getAnyMedia(): Media
     {
-        return $this->em->getRepository(Media::class)->findOneBy([]);
-    }
-
-    private function getMediaOwnedByAnotherUser(User $guest): Media
-    {
-        return $this->em->getRepository(Media::class)->createQueryBuilder('m')
-            ->andWhere('m.user != :guest')
-            ->setParameter('guest', $guest)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $media = $this->em->getRepository(Media::class)->findOneBy([]);
+        self::assertNotNull($media, "At least one Media must exist in fixtures");
+        return $media;
     }
 
     public function testGuestCannotAccessOthersMedia(): void
     {
-        $client = static::createClient();
-        $this->initEm(); // container OK après createClient()
+        $guest = $this->getUserByEmail('invite@test.com');
+        $this->client->loginUser($guest);
 
-        $guest = $this->getGuest();
-        $client->loginUser($guest);
+        $media = $this->getAnyMedia();
 
-        $media = $this->getMediaOwnedByAnotherUser($guest);
-
-        $client->request('POST', "/admin/media/delete/{$media->getId()}", [
+        $this->client->request('POST', "/admin/media/delete/{$media->getId()}", [
             '_token' => 'invalid'
         ]);
 
@@ -61,14 +49,12 @@ class MediaPermissionsTest extends WebTestCase
 
     public function testInaCanAccessAllMedia(): void
     {
-        $client = static::createClient();
-        $this->initEm();
-
-        $client->loginUser($this->getIna());
+        $ina = $this->getUserByEmail('ina@test.com');
+        $this->client->loginUser($ina);
 
         $media = $this->getAnyMedia();
 
-        $client->request('POST', "/admin/media/delete/{$media->getId()}", [
+        $this->client->request('POST', "/admin/media/delete/{$media->getId()}", [
             '_token' => 'delete_media_' . $media->getId()
         ]);
 

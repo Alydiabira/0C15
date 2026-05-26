@@ -4,10 +4,10 @@ namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class UserTest extends WebTestCase
+class UserTestUnit extends WebTestCase
 {
     public function testDummy(): void
     {
-        $this->assertTrue(true);
+        self::assertSame(1, 1);
     }
 }

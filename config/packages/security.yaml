@@ -14,23 +14,27 @@ security:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
-    # 🔐 Firewall ADMIN
     admin:
       pattern: ^/admin
       provider: app_user_provider
       lazy: true
+
+      custom_authenticator:
+        - App\Security\AdminAuthenticator
 
       form_login:
         login_path: admin_login
         check_path: admin_login
         default_target_path: admin_album_index
 
+      entry_point: form_login
+
       logout:
         path: app_logout
         target: /
 
-    # 🔐 Firewall INVITÉS / FRONT
     main:
+      pattern: ^/(?!admin) # ⬅️ EXCLUSION DE /admin
       lazy: true
       provider: app_user_provider
 
@@ -51,5 +55,4 @@ security:
 
   access_control:
     - { path: ^/admin/login, roles: PUBLIC_ACCESS }
-    - { path: ^/admin, roles: ROLE_INA }
-    - { path: ^/media, roles: ROLE_USER }
+    - { path: ^/admin, roles: ROLE_USER }

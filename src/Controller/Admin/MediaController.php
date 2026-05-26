@@ -55,19 +55,17 @@ class MediaController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            // Attribution automatique du user si ce n'est pas INA
-            if (!$this->isGranted('ROLE_INA')) {
-                $media->setUser($this->getUser());
-            }
 
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
-            if ($file instanceof UploadedFile) {
-                $filename = md5(uniqid()) . '.' . $file->guessExtension();
-                $file->move('uploads/', $filename);
-                $media->setPath('uploads/' . $filename);
-            }
+            if (!$this->isGranted('ROLE_INA')) {
+    $user = $this->getUser();
+    if ($user instanceof \App\Entity\User) {
+        $media->setUser($user);
+    }
+}
+
 
             $em->persist($media);
             $em->flush();

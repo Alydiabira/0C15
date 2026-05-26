@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Tests\Fixtures;
+namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class AppFixtures extends WebTestCase
+class MediaTestUnit extends WebTestCase
 {
     public function testDummy(): void
     {
