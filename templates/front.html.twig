@@ -36,7 +36,7 @@
 								{% if is_granted('ROLE_INA') %}
 									<a class="nav-link" href="{{ path('admin_album_index') }}">Admin</a>
 								{% else %}
-									<a class="nav-link" href="{{ path('media_index') }}">Mon espace</a>
+									<a class="nav-link" href="{{ path('guest', {id: app.user.id}) }}">Mon espace</a>
 								{% endif %}
 							{% else %}
 								<a class="nav-link" href="{{ path('app_login') }}">Connexion</a>
@@ -56,6 +56,6 @@
 	</main>
 
 	<footer class="py-4 text-center">
-		Ina Zaoui copyright 2024©
+		Ina Zaoui copyright 2024 - 2026©
 	</footer>
 {% endblock %}

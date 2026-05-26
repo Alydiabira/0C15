@@ -55,7 +55,9 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
         }
 
         // Invité → redirection vers ses médias
-        return new RedirectResponse($this->urlGenerator->generate('media_index'));
+        return new RedirectResponse(
+            $this->urlGenerator->generate('guest', ['id' => $user->getId()])
+        );
     }
 
 
