@@ -30,16 +30,15 @@ class MediaUploadTest extends WebTestCase
         // Authentification sur le firewall admin
         $this->client->loginUser($ina, 'admin');
 
-        $path = dirname(__DIR__) . '/files/0001.jpg';
+        $path = __DIR__ . '/files/0001.jpg';
 
         $file = new UploadedFile(
             $path,
             '0001.jpg',
-            'image/jpg',
+            'image/jpeg',
             null,
             true
         );
-
 
         $this->client->request('POST', '/admin/media/upload', [], [
             'media' => $file

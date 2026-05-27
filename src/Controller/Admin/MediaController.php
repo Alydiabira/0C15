@@ -55,16 +55,21 @@ class MediaController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
+            if ($file instanceof UploadedFile) {
+                $filename = md5(uniqid()) . '.' . $file->guessExtension();
+                $file->move('uploads/', $filename);
+                $media->setPath('uploads/' . $filename);
+            }
+
             if (!$this->isGranted('ROLE_INA')) {
-    $user = $this->getUser();
-    if ($user instanceof \App\Entity\User) {
-        $media->setUser($user);
-    }
-}
+                $user = $this->getUser();
+                if ($user instanceof \App\Entity\User) {
+                    $media->setUser($user);
+                }
+            }
 
 
             $em->persist($media);
@@ -76,6 +81,37 @@ class MediaController extends AbstractController
         return $this->render('admin/media/add.html.twig', [
             'form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/upload', name: 'admin_media_upload', methods: ['POST'])]
+    public function upload(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var UploadedFile|null $file */
+        $file = $request->files->get('media');
+
+        if (!$file instanceof UploadedFile) {
+            $this->addFlash('error', 'Aucun fichier envoyé.');
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        // Upload du fichier
+        $filename = md5(uniqid()) . '.' . $file->guessExtension();
+        $file->move('uploads/', $filename);
+
+        // Création de l'entité Media
+        $media = new Media();
+        $media->setTitle($filename);
+        $media->setPath('uploads/' . $filename);
+        $user = $this->getUser();
+        if ($user instanceof \App\Entity\User) {
+            $media->setUser($user);
+        }
+
+
+        $em->persist($media);
+        $em->flush();
+
+        return $this->redirectToRoute('admin_media_index');
     }
 
     #[Route('/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
