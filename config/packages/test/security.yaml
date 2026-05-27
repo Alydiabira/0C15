@@ -1,0 +1,5 @@
+security:
+    firewalls:
+        admin:
+            http_basic: true
+            lazy: true

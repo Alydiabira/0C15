@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Entity\User;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +21,7 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
 
-    public const LOGIN_ROUTE = 'app_login';
+    public const LOGIN_ROUTE = 'admin_login';
 
     public function __construct(private UrlGeneratorInterface $urlGenerator) {}
 
@@ -42,24 +43,26 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        // Si un target path existe (page demandée avant login), on y retourne
+        // Retour vers la page demandée avant login
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
             return new RedirectResponse($targetPath);
         }
 
-        // 🔐 Redirection selon le rôle
+        /** @var User $user */
         $user = $token->getUser();
 
-        if (in_array('ROLE_INA', $user->getRoles())) {
-            return new RedirectResponse($this->urlGenerator->generate('admin_album_index'));
+        // Admin (Ina)
+        if (in_array('ROLE_INA', $user->getRoles(), true)) {
+            return new RedirectResponse(
+                $this->urlGenerator->generate('admin_media_index')
+            );
         }
 
-        // Invité → redirection vers ses médias
+        // Guest
         return new RedirectResponse(
             $this->urlGenerator->generate('guest', ['id' => $user->getId()])
         );
     }
-
 
     protected function getLoginUrl(Request $request): string
     {

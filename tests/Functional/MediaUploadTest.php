@@ -9,49 +9,41 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class MediaUploadTest extends WebTestCase
 {
+    private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
     private EntityManagerInterface $em;
 
-    private function initEm(): void
+    protected function setUp(): void
     {
+        $this->client = static::createClient();
         $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
-    private function getIna(): User
+    private function getUserByEmail(string $email): User
     {
-        return $this->em->getRepository(User::class)->findOneBy(['type' => 'ina']);
+        return $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
     }
 
     public function testUploadValidImage(): void
     {
-        $client = static::createClient();
-        $this->initEm();
+        $ina = $this->getUserByEmail('ina@test.com');
 
-        $ina = $this->getIna();
-        $client->loginUser($ina);
+        // Authentification sur le firewall admin
+        $this->client->loginUser($ina, 'admin');
+
+        $path = dirname(__DIR__) . '/files/0001.jpg';
 
         $file = new UploadedFile(
-            __DIR__ . '/files/0001.jpg',
+            $path,
             '0001.jpg',
-            'image/jpeg',
+            'image/jpg',
             null,
             true
         );
 
-        $client->request(
-            'POST',
-            '/admin/media/add',
-            [
-                'media' => [
-                    'title' => 'Test upload',
-                    'album' => '',   // ← IMPORTANT
-                ]
-            ],
-            [
-                'media' => [
-                    'file' => $file
-                ]
-            ]
-        );
+
+        $this->client->request('POST', '/admin/media/upload', [], [
+            'media' => $file
+        ]);
 
         $this->assertResponseRedirects('/admin/media');
     }
