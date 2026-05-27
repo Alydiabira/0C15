@@ -2,15 +2,17 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\User;
 use App\Entity\Media;
+use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
-    public function __construct(private UserPasswordHasherInterface $hasher) {}
+    public function __construct(private UserPasswordHasherInterface $hasher)
+    {
+    }
 
     public function load(ObjectManager $manager): void
     {
@@ -34,8 +36,8 @@ class AppFixtures extends Fixture
 
         // MEDIA pour les tests
         $media = new Media();
-        $media->setTitle("Media test");
-        $media->setPath("uploads/test.jpg");
+        $media->setTitle('Media test');
+        $media->setPath('uploads/test.jpg');
         $media->setUser($invite);
         $manager->persist($media);
 

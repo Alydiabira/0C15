@@ -8,5 +8,6 @@ class InviteCrudTest extends WebTestCase
 {
     public function testDummy(): void
     {
-        self::assertSame(1, 1);    }
+        self::assertSame(1, 1);
+    }
 }

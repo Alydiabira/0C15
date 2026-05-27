@@ -26,14 +26,14 @@ class Media
     #[ORM\Column(type: 'string', length: 255)]
     private string $path = '';
 
-    #[Assert\NotBlank(message: "Le titre est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
     #[ORM\Column(type: 'string', length: 255)]
     private string $title = '';
 
     #[Assert\File(
-        maxSize: "2M",
-        mimeTypes: ["image/jpeg", "image/png"],
-        mimeTypesMessage: "Le fichier doit être une image JPEG ou PNG."
+        maxSize: '2M',
+        mimeTypes: ['image/jpeg', 'image/png'],
+        mimeTypesMessage: 'Le fichier doit être une image JPEG ou PNG.'
     )]
     private ?UploadedFile $file = null;
 
@@ -50,6 +50,7 @@ class Media
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -61,6 +62,7 @@ class Media
     public function setAlbum(?Album $album): static
     {
         $this->album = $album;
+
         return $this;
     }
 
@@ -72,6 +74,7 @@ class Media
     public function setPath(string $path): static
     {
         $this->path = $path;
+
         return $this;
     }
 
@@ -83,6 +86,7 @@ class Media
     public function setTitle(string $title): static
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -94,6 +98,7 @@ class Media
     public function setFile(?UploadedFile $file): static
     {
         $this->file = $file;
+
         return $this;
     }
 }

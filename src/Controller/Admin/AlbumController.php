@@ -55,6 +55,7 @@ class AlbumController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -70,7 +71,7 @@ class AlbumController extends AbstractController
 
         $token = (string) $request->request->get('_token');
 
-        if ($this->isCsrfTokenValid('delete_album_' . $album->getId(), $token)) {
+        if ($this->isCsrfTokenValid('delete_album_'.$album->getId(), $token)) {
             $em->remove($album);
             $em->flush();
         }

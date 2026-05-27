@@ -2,8 +2,8 @@
 
 namespace App\Tests\Functional;
 
-use App\Entity\User;
 use App\Entity\Media;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,13 +23,15 @@ class MediaPermissionsTest extends WebTestCase
     {
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
         self::assertNotNull($user, "User $email must exist in fixtures");
+
         return $user;
     }
 
     private function getAnyMedia(): Media
     {
         $media = $this->em->getRepository(Media::class)->findOneBy([]);
-        self::assertNotNull($media, "At least one Media must exist in fixtures");
+        self::assertNotNull($media, 'At least one Media must exist in fixtures');
+
         return $media;
     }
 
@@ -41,7 +43,7 @@ class MediaPermissionsTest extends WebTestCase
         $media = $this->getAnyMedia();
 
         $this->client->request('POST', "/admin/media/delete/{$media->getId()}", [
-            '_token' => 'invalid'
+            '_token' => 'invalid',
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
@@ -55,7 +57,7 @@ class MediaPermissionsTest extends WebTestCase
         $media = $this->getAnyMedia();
 
         $this->client->request('POST', "/admin/media/delete/{$media->getId()}", [
-            '_token' => 'delete_media_' . $media->getId()
+            '_token' => 'delete_media_'.$media->getId(),
         ]);
 
         $this->assertResponseRedirects('/admin/media');

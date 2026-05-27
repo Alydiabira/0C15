@@ -31,7 +31,7 @@ class InviteController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_INA');
 
@@ -42,7 +42,6 @@ class InviteController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-
             $plainPassword = (string) $form->get('plainPassword')->getData();
             $hashedPassword = $passwordHasher->hashPassword($invite, $plainPassword);
 
@@ -77,7 +76,7 @@ class InviteController extends AbstractController
 
         $token = (string) $request->request->get('_token');
 
-        if ($this->isCsrfTokenValid('delete_invite_' . $user->getId(), $token)) {
+        if ($this->isCsrfTokenValid('delete_invite_'.$user->getId(), $token)) {
             $em->remove($user);
             $em->flush();
         }

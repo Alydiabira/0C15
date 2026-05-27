@@ -7,10 +7,10 @@ use App\Form\MediaType;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Route('/admin/media')]
 class MediaController extends AbstractController
@@ -54,14 +54,13 @@ class MediaController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
             if ($file instanceof UploadedFile) {
-                $filename = md5(uniqid()) . '.' . $file->guessExtension();
+                $filename = md5(uniqid()).'.'.$file->guessExtension();
                 $file->move('uploads/', $filename);
-                $media->setPath('uploads/' . $filename);
+                $media->setPath('uploads/'.$filename);
             }
 
             if (!$this->isGranted('ROLE_INA')) {
@@ -70,7 +69,6 @@ class MediaController extends AbstractController
                     $media->setUser($user);
                 }
             }
-
 
             $em->persist($media);
             $em->flush();
@@ -91,22 +89,22 @@ class MediaController extends AbstractController
 
         if (!$file instanceof UploadedFile) {
             $this->addFlash('error', 'Aucun fichier envoyé.');
+
             return $this->redirectToRoute('admin_media_index');
         }
 
         // Upload du fichier
-        $filename = md5(uniqid()) . '.' . $file->guessExtension();
+        $filename = md5(uniqid()).'.'.$file->guessExtension();
         $file->move('uploads/', $filename);
 
         // Création de l'entité Media
         $media = new Media();
         $media->setTitle($filename);
-        $media->setPath('uploads/' . $filename);
+        $media->setPath('uploads/'.$filename);
         $user = $this->getUser();
         if ($user instanceof \App\Entity\User) {
             $media->setUser($user);
         }
-
 
         $em->persist($media);
         $em->flush();
@@ -124,8 +122,7 @@ class MediaController extends AbstractController
 
         $token = (string) $request->request->get('_token');
 
-        if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $token)) {
-
+        if ($this->isCsrfTokenValid('delete_media_'.$media->getId(), $token)) {
             // Suppression du fichier physique
             if ($media->getPath() && is_file($media->getPath())) {
                 unlink($media->getPath());
@@ -153,20 +150,18 @@ class MediaController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
             if ($file instanceof UploadedFile) {
-
                 // Supprimer l'ancien fichier si présent
                 if ($media->getPath() && is_file($media->getPath())) {
                     unlink($media->getPath());
                 }
 
-                $filename = md5(uniqid()) . '.' . $file->guessExtension();
+                $filename = md5(uniqid()).'.'.$file->guessExtension();
                 $file->move('uploads/', $filename);
-                $media->setPath('uploads/' . $filename);
+                $media->setPath('uploads/'.$filename);
             }
 
             $em->flush();

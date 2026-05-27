@@ -41,7 +41,7 @@ class HomeController extends AbstractController
         ?Album $album,
         AlbumRepository $albumRepository,
         MediaRepository $mediaRepository,
-        UserRepository $userRepository
+        UserRepository $userRepository,
     ): Response {
         // Tous les albums
         $albums = $albumRepository->findAll();
