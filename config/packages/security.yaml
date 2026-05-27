@@ -19,16 +19,15 @@ security:
       provider: app_user_provider
       lazy: true
 
+      # Désactive http_basic (sinon Symfony le compte comme un 2e authenticator)
+      http_basic: false
+
+      # Un SEUL authenticator
       custom_authenticator:
-        - App\Security\AppAuthenticator
+        - App\Security\AdminAuthenticator
 
-      form_login:
-        login_path: admin_login
-        check_path: admin_login
-
-      entry_point: form_login
-
-      access_denied_handler: App\Security\AccessDeniedHandler
+      # Obligatoire car il n’y a qu’un authenticator
+      entry_point: App\Security\AdminAuthenticator
 
       logout:
         path: app_logout
