@@ -18,17 +18,11 @@ security:
       pattern: ^/admin
       provider: app_user_provider
       lazy: true
-
-      # Désactive http_basic (sinon Symfony le compte comme un 2e authenticator)
+      user_checker: App\Security\UserChecker
       http_basic: false
-
-      # Un SEUL authenticator
       custom_authenticator:
         - App\Security\AdminAuthenticator
-
-      # Obligatoire car il n’y a qu’un authenticator
       entry_point: App\Security\AdminAuthenticator
-
       logout:
         path: app_logout
         target: /
@@ -37,15 +31,13 @@ security:
       pattern: ^/
       provider: app_user_provider
       lazy: true
-
+      user_checker: App\Security\UserChecker
       custom_authenticator:
         - App\Security\AppAuthenticator
-
       remember_me:
         secret: "%kernel.secret%"
         lifetime: 604800
         path: /
-
       logout:
         path: app_logout
         target: /
@@ -55,5 +47,6 @@ security:
 
   access_control:
     - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+    - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/admin, roles: ROLE_INA }
     - { path: ^/guest, roles: ROLE_USER }

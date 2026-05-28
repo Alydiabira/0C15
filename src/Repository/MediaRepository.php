@@ -8,16 +8,36 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Media>
- *
- * @method Media|null find($id, $lockMode = null, $lockVersion = null)
- * @method Media|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
- * @method Media[]    findAll()
- * @method Media[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
  */
 class MediaRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Media::class);
+    }
+
+    /**
+     * @return Media[]
+     */
+    public function findVisibleForAdmin(int $limit, int $offset): array
+    {
+        return $this->createQueryBuilder('m')
+            ->join('m.user', 'u')
+            ->andWhere('u.isBlocked = false')
+            ->orderBy('m.id', 'ASC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countVisibleForAdmin(): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->join('m.user', 'u')
+            ->andWhere('u.isBlocked = false')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

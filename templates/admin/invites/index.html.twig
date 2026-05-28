@@ -24,10 +24,13 @@
 					<td>{{ invite.isBlocked ? 'Oui' : 'Non' }}</td>
 
 					<td>
-						{# --- Bouton Bloquer --- #}
+
+						{# --- Bouton Révoquer (bloque l'accès) --- #}
 						{% if not invite.isBlocked %}
-							<form method="post" action="{{ path('admin_invite_block', {id: invite.id}) }}" style="display:inline-block">
-								<button class="btn btn-warning btn-sm">Bloquer</button>
+							<form method="post" action="{{ path('admin_invite_revoke', {id: invite.id}) }}" style="display:inline-block" onsubmit="return confirm('Révoquer cet invité ? Il ne pourra plus se connecter et ses photos seront masquées.');">
+
+								<input type="hidden" name="_token" value="{{ csrf_token('revoke_invite_' ~ invite.id) }}">
+								<button class="btn btn-warning btn-sm">Révoquer</button>
 							</form>
 						{% endif %}
 
@@ -35,9 +38,9 @@
 						<form method="post" action="{{ path('admin_invite_delete', {id: invite.id}) }}" style="display:inline-block" onsubmit="return confirm('Supprimer cet invité ? Tous ses médias seront supprimés.');">
 
 							<input type="hidden" name="_token" value="{{ csrf_token('delete_invite_' ~ invite.id) }}">
-
 							<button class="btn btn-danger btn-sm">Supprimer</button>
 						</form>
+
 					</td>
 				</tr>
 			{% endfor %}

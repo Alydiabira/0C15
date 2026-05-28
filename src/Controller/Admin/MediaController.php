@@ -21,19 +21,26 @@ class MediaController extends AbstractController
         $page = $request->query->getInt('page', 1);
 
         // Si ce n'est pas INA → on ne voit que ses propres médias
-        $criteria = [];
         if (!$this->isGranted('ROLE_INA')) {
-            $criteria['user'] = $this->getUser();
+            $criteria = ['user' => $this->getUser()];
+
+            $medias = $mediaRepository->findBy(
+                $criteria,
+                ['id' => 'ASC'],
+                25,
+                25 * ($page - 1)
+            );
+
+            $total = $mediaRepository->count($criteria);
+        } else {
+            // INA → voit tous les médias SAUF ceux des invités bloqués
+            $medias = $mediaRepository->findVisibleForAdmin(
+                25,
+                25 * ($page - 1)
+            );
+
+            $total = $mediaRepository->countVisibleForAdmin();
         }
-
-        $medias = $mediaRepository->findBy(
-            $criteria,
-            ['id' => 'ASC'],
-            25,
-            25 * ($page - 1)
-        );
-
-        $total = $mediaRepository->count($criteria);
 
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,

@@ -30,23 +30,28 @@
 							<a class="nav-link" href="{{ path('about') }}">Qui suis-je ?</a>
 						</li>
 
-						
-
-						{# 🔐 BOUTON DE CONNEXION INTELLIGENT #}
 						<li class="nav-item">
 							{% if app.user %}
+
+								{# Si INA #}
 								{% if is_granted('ROLE_INA') %}
 									<a class="nav-link" href="{{ path('admin_album_index') }}">Admin</a>
+
+									{# Si invité #}
 								{% else %}
 									<a class="nav-link" href="{{ path('guest', {id: app.user.id}) }}">Mon espace</a>
 								{% endif %}
+
 							{% else %}
 								<a class="nav-link" href="{{ path('app_login') }}">Connexion</a>
-
 							{% endif %}
-
-
 						</li>
+
+						{% if app.user %}
+							<li class="nav-item">
+								<a class="nav-link text-danger" href="{{ path('app_logout') }}">Déconnexion</a>
+							</li>
+						{% endif %}
 
 					</ul>
 

@@ -83,4 +83,19 @@ class InviteController extends AbstractController
 
         return $this->redirectToRoute('admin_invite_index');
     }
+
+    #[Route('/revoke/{id}', name: 'admin_invite_revoke', methods: ['POST'])]
+    public function revoke(User $user, EntityManagerInterface $em): Response
+    {
+        if (!$this->isGranted('ROLE_INA')) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $user->setIsBlocked(true);
+        $em->flush();
+
+        $this->addFlash('success', 'L’accès de cet invité a été révoqué.');
+
+        return $this->redirectToRoute('admin_invite_index');
+    }
 }
