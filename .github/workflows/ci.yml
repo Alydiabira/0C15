@@ -10,6 +10,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -25,7 +39,16 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Create .env.test
-        run: cp .env .env.test
+        run: |
+          cp .env .env.test
+          echo "DATABASE_URL=\"mysql://root:root@127.0.0.1:3306/test_db?serverVersion=8\"" >> .env.test
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h127.0.0.1 -uroot -proot && break
+            sleep 1
+          done
 
       - name: Setup database
         run: |
