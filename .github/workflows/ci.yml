@@ -31,9 +31,10 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, intl, pdo_mysql
           coverage: xdebug
+
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
