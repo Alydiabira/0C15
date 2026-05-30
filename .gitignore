@@ -24,3 +24,4 @@ composer.lock
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
 .env.test.local
+.env.test.local
