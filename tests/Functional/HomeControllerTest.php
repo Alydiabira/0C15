@@ -4,12 +4,12 @@ namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class PortfolioTest extends WebTestCase
+class HomeControllerTest extends WebTestCase
 {
-    public function testPortfolioPageLoads(): void
+    public function testHomepageLoads(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/portfolio/1');
+        $client->request('GET', '/');
 
         $this->assertResponseIsSuccessful();
     }
