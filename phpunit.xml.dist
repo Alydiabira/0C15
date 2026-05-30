@@ -17,8 +17,6 @@
         <env name="KERNEL_CLASS" value="App\Kernel" />
         <env name="APP_ENV" value="test" />
         <env name="APP_DEBUG" value="1" />
-        <env name="DATABASE_URL"
-            value="mysql://root:root@127.0.0.1:8889/ina?serverVersion=8.0.35&amp;charset=utf8mb4" />
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
         <server name="SHELL_VERBOSITY" value="-1" />
     </php>
