@@ -17,7 +17,7 @@ class GuestShowTest extends WebTestCase
         $guest = self::getContainer()->get('doctrine')->getRepository(\App\Entity\User::class)
             ->findOneBy(['type' => 'guest']);
 
-        $client->request('GET', '/guest/' . $guest->getId());
+        $client->request('GET', '/guest/'.$guest->getId());
 
         $this->assertResponseStatusCodeSame(200);
     }
