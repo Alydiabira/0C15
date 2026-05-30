@@ -2,14 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    network_mode: bridge
 
     services:
       mysql:
@@ -32,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           extensions: mbstring, intl, pdo_mysql
           coverage: xdebug
 
@@ -42,12 +41,12 @@ jobs:
       - name: Create .env.test
         run: |
           cp .env .env.test
-          echo "DATABASE_URL=\"mysql://root:root@mysql:3306/test_db?serverVersion=8.0\"" >> .env.test
+          echo "DATABASE_URL=\"mysql://root:root@127.0.0.1:3306/test_db?serverVersion=8.0\"" >> .env.test
 
       - name: Wait for MySQL
         run: |
           for i in {1..40}; do
-            mysqladmin ping -hmysql -uroot -proot && break
+            mysqladmin ping -h127.0.0.1 -uroot -proot && break
             sleep 1
           done
 
