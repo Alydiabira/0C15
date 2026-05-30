@@ -10,24 +10,22 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -uroot -proot"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=20
+
     steps:
       - uses: actions/checkout@v4
-
-      - name: Start MySQL manually
-        run: |
-          docker run -d \
-            --name mysql \
-            -e MYSQL_ROOT_PASSWORD=root \
-            -e MYSQL_DATABASE=test_db \
-            -p 3306:3306 \
-            mysql:8.0
-
-      - name: Wait for MySQL
-        run: |
-          for i in {1..60}; do
-            docker exec mysql mysqladmin ping -uroot -proot && break
-            sleep 1
-          done
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -43,7 +41,18 @@ jobs:
         run: |
           echo "APP_ENV=test" > .env.test
           echo "APP_SECRET=testsecret" >> .env.test
-          echo "DATABASE_URL=\"mysql://root:root@127.0.0.1:3306/test_db?serverVersion=8.0\"" >> .env.test
+          echo "DATABASE_URL=\"mysql://root:root@127.0.0.1:3306/test_db_test?serverVersion=8.0\"" >> .env.test
+
+      - name: Debug env
+        run: |
+          echo "From shell:"
+          echo "$DATABASE_URL"
+          echo
+          echo "From PHP getenv():"
+          php -r "echo getenv('DATABASE_URL') . PHP_EOL;"
+          echo
+          echo "From Symfony container (test env):"
+          php bin/console debug:container --env=test | grep DATABASE_URL || true
 
       - name: Prepare database
         run: |
@@ -52,4 +61,4 @@ jobs:
           php bin/console doctrine:fixtures:load --no-interaction --env=test
 
       - name: Run tests
-        run: php bin/phpunit
+        run: vendor/bin/phpunit --display-warnings=0

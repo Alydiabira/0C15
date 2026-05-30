@@ -2,11 +2,10 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
-    bootstrap="tests/bootstrap.php"
+    bootstrap="vendor/autoload.php"
     colors="true"
     cacheDirectory=".phpunit.cache"
 >
-
     <testsuites>
         <testsuite name="Project Test Suite">
             <directory>tests</directory>
@@ -14,23 +13,7 @@
     </testsuites>
 
     <php>
-        <env name="KERNEL_CLASS" value="App\Kernel" />
         <env name="APP_ENV" value="test" />
-        <env name="APP_DEBUG" value="1" />
-        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
-        <server name="SHELL_VERBOSITY" value="-1" />
+        <env name="SOME_VAR" value="value" />
     </php>
-    <php>
-        <server name="APP_ENV" value="test" />
-        <server name="APP_DEBUG" value="1" />
-    </php>
-
-
-    <coverage>
-        <include>
-            <directory suffix=".php">src/</directory>
-        </include>
-    </coverage>
-
-
 </phpunit>

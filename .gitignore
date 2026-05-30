@@ -25,3 +25,4 @@ composer.lock
 ###< friendsofphp/php-cs-fixer ###
 .env.test.local
 .env.test.local
+.env.test.local
