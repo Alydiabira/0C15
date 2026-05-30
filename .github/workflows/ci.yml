@@ -16,8 +16,6 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: test_db
-        ports:
-          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=5s
@@ -40,13 +38,13 @@ jobs:
 
       - name: Create .env.test
         run: |
-          cp .env .env.test
-          echo "DATABASE_URL=\"mysql://root:root@172.17.0.2:3306/test_db?serverVersion=8.0\"" > .env.test
+          echo "APP_ENV=test" > .env.test
+          echo "DATABASE_URL=\"mysql://root:root@mysql:3306/test_db?serverVersion=8.0\"" >> .env.test
 
       - name: Wait for MySQL
         run: |
           for i in {1..40}; do
-            mysqladmin ping -h172.17.0.2 -uroot -proot && break
+            mysqladmin ping -hmysql -uroot -proot && break
             sleep 1
           done
 
