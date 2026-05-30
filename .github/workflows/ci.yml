@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           extensions: mbstring, intl, pdo_mysql
           coverage: xdebug
 
@@ -41,12 +41,12 @@ jobs:
       - name: Create .env.test
         run: |
           cp .env .env.test
-          echo "DATABASE_URL=\"mysql://root:root@host.docker.internal:3306/test_db?serverVersion=8.0\"" > .env.test
+          echo "DATABASE_URL=\"mysql://root:root@172.17.0.2:3306/test_db?serverVersion=8.0\"" > .env.test
 
       - name: Wait for MySQL
         run: |
           for i in {1..40}; do
-            mysqladmin ping -hhost.docker.internal -uroot -proot && break
+            mysqladmin ping -h172.17.0.2 -uroot -proot && break
             sleep 1
           done
 
