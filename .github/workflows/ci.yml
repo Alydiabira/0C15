@@ -2,25 +2,42 @@ name: CI
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
-  tests:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: '8.2'
           extensions: mbstring, intl, pdo_mysql
           coverage: xdebug
 
-      - name: Install dependencies
-        run: composer install --no-interaction
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
 
-      - name: Run tests
-        run: php bin/phpunit --coverage-text
- 
+      - name: Create .env.test
+        run: cp .env .env.test
+
+      - name: Setup database
+        run: |
+          php bin/console doctrine:database:create --env=test
+          php bin/console doctrine:schema:create --env=test
+          php bin/console doctrine:fixtures:load --no-interaction --env=test
+
+      - name: Run PHPUnit tests
+        run: php bin/phpunit --coverage-clover coverage.xml
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G
+
+      - name: Run PHP-CS-Fixer (dry-run)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff

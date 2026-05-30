@@ -2,7 +2,6 @@
 
 namespace App\Tests\Security;
 
-use App\Security\AppAuthenticator;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class AuthenticatorTest extends WebTestCase

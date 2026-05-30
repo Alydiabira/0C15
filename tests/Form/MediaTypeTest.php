@@ -16,7 +16,7 @@ class MediaTypeTest extends KernelTestCase
         $form = $factory->create(MediaType::class);
 
         $form->submit([
-            'title' => 'Test media'
+            'title' => 'Test media',
         ]);
 
         $this->assertTrue($form->isSynchronized());

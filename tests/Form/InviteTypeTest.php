@@ -17,7 +17,7 @@ class InviteTypeTest extends KernelTestCase
 
         $form->submit([
             'name' => 'John',
-            'email' => 'john@example.com'
+            'email' => 'john@example.com',
         ]);
 
         $this->assertTrue($form->isSynchronized());
