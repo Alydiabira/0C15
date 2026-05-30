@@ -14,6 +14,8 @@
 
     <php>
         <env name="APP_ENV" value="test" />
-        <env name="SOME_VAR" value="value" />
+        <env name="KERNEL_CLASS" value="App\Kernel" />
+        <env name="DATABASE_URL" value="mysql://root:@127.0.0.1:3306/ina_test?charset=utf8mb4" />
+        <env name="SHELL_VERBOSITY" value="-1" />
     </php>
 </phpunit>
