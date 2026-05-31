@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
   pull_request:
-    branches: ["main"]
 
 jobs:
   tests:
@@ -15,14 +13,14 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
+          MYSQL_DATABASE: app_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -uroot -proot"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=20
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -37,28 +35,21 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Create .env.test
+      - name: Wait for MySQL
         run: |
-          echo "APP_ENV=test" > .env.test
-          echo "APP_SECRET=testsecret" >> .env.test
-          echo "DATABASE_URL=\"mysql://root:root@127.0.0.1:3306/test_db_test?serverVersion=8.0\"" >> .env.test
+          for i in {1..30}; do
+            mysql -h 127.0.0.1 -uroot -proot -e "SELECT 1" && break
+            sleep 1
+          done
 
-      - name: Debug env
+      - name: Prepare test database
+        env:
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
         run: |
-          echo "From shell:"
-          echo "$DATABASE_URL"
-          echo
-          echo "From PHP getenv():"
-          php -r "echo getenv('DATABASE_URL') . PHP_EOL;"
-          echo
-          echo "From Symfony container (test env):"
-          php bin/console debug:container --env=test | grep DATABASE_URL || true
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:schema:update --env=test --force
 
-      - name: Prepare database
-        run: |
-          php bin/console doctrine:database:create --env=test
-          php bin/console doctrine:schema:create --env=test
-          php bin/console doctrine:fixtures:load --no-interaction --env=test
-
-      - name: Run tests
+      - name: Run PHPUnit
+        env:
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
         run: vendor/bin/phpunit --display-warnings=0
