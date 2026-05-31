@@ -44,12 +44,20 @@ jobs:
 
       - name: Prepare test database
         env:
+          APP_SECRET: testsecret
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
         run: |
           php bin/console doctrine:database:create --env=test --if-not-exists
           php bin/console doctrine:schema:update --env=test --force
 
+      - name: Load test fixtures
+        env:
+          APP_SECRET: testsecret
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
+        run: php bin/console doctrine:fixtures:load --env=test --group=test --no-interaction
+
       - name: Run PHPUnit
         env:
+          APP_SECRET: testsecret
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
         run: vendor/bin/phpunit --display-warnings=0

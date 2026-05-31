@@ -5,13 +5,17 @@ namespace App\DataFixtures;
 use App\Entity\Media;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class AppFixtures extends Fixture
+class AppFixtures extends Fixture implements FixtureGroupInterface
 {
-    public function __construct(private UserPasswordHasherInterface $hasher)
+    public function __construct(private UserPasswordHasherInterface $hasher) {}
+
+    public static function getGroups(): array
     {
+        return ['dev'];
     }
 
     public function load(ObjectManager $manager): void
@@ -26,7 +30,7 @@ class AppFixtures extends Fixture
         $manager->persist($ina);
         $this->addReference('user_ina', $ina);
 
-        // INVITE (utilisateur invité)
+        // INVITE
         $invite = new User();
         $invite->setEmail('invite@test.com');
         $invite->setName('Invite');
@@ -36,7 +40,7 @@ class AppFixtures extends Fixture
         $manager->persist($invite);
         $this->addReference('user_invite', $invite);
 
-        // GUEST (invité affiché côté front)
+        // GUEST
         $guest = new User();
         $guest->setEmail('guest@test.com');
         $guest->setName('Guest');
@@ -46,7 +50,7 @@ class AppFixtures extends Fixture
         $manager->persist($guest);
         $this->addReference('user_guest', $guest);
 
-        // MEDIA pour les tests (lié à l'invité)
+        // MEDIA
         $media = new Media();
         $media->setTitle('Media test');
         $media->setPath('uploads/test.jpg');
