@@ -20,34 +20,34 @@ class TestUserFixtures extends Fixture implements FixtureGroupInterface
 
     public function load(ObjectManager $manager): void
     {
-        // INA (admin)
-        $ina = new User();
-        $ina->setEmail('ina@test.com');
-        $ina->setName('Ina');
-        $ina->setType('ina');
-        $ina->setRoles(['ROLE_ADMIN']);
-        $ina->setPassword($this->hasher->hashPassword($ina, 'password'));
-        $manager->persist($ina);
+        // ADMIN TEST
+        $admin = new User();
+        $admin->setEmail('admin_test@example.com');
+        $admin->setName('Admin Test');
+        $admin->setType('ina');
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setPassword($this->hasher->hashPassword($admin, 'password'));
+        $manager->persist($admin);
 
-        // INVITE
+        // INVITE TEST
         $invite = new User();
-        $invite->setEmail('invite@test.com');
-        $invite->setName('Invite');
+        $invite->setEmail('invite_test@example.com');
+        $invite->setName('Invite Test');
         $invite->setType('invite');
         $invite->setRoles(['ROLE_USER']);
         $invite->setPassword($this->hasher->hashPassword($invite, 'password'));
         $manager->persist($invite);
 
-        // GUEST
+        // GUEST TEST
         $guest = new User();
-        $guest->setEmail('guest@test.com');
-        $guest->setName('Guest');
+        $guest->setEmail('guest_test@example.com');
+        $guest->setName('Guest Test');
         $guest->setType('guest');
         $guest->setRoles(['ROLE_USER']);
         $guest->setPassword($this->hasher->hashPassword($guest, 'password'));
         $manager->persist($guest);
 
-        // MEDIA lié à invite@test.com
+        // MEDIA lié à invite_test@example.com
         $media = new Media();
         $media->setTitle('Media test');
         $media->setPath('uploads/test.jpg');

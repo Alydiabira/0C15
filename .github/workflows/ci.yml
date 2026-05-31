@@ -60,4 +60,4 @@ jobs:
         env:
           APP_SECRET: testsecret
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test
-        run: vendor/bin/phpunit --display-warnings=0
+        run: vendor/bin/phpunit --display-warnings=0 --display-deprecations=0
