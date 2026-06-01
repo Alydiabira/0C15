@@ -1,15 +1,11 @@
-
-#  **3. CONTRIBUTING.md — VERSION FINALE**
-
-```md
-# Guide de contribution
+# . CONTRIBUTING.md — VERSION FINALE
 
 Merci de votre intérêt pour ce projet !
 Voici les règles à suivre pour contribuer efficacement.
 
 ---
 
-##  Soumettre un problème (issue)
+## Soumettre un problème (issue)
 
 Avant d’ouvrir une issue :
 
@@ -22,9 +18,9 @@ Avant d’ouvrir une issue :
 
 ---
 
-##  Proposer une fonctionnalité
+## Proposer une fonctionnalité
 
-1. Ouvrez une *feature request*.
+1. Ouvrez une _feature request_.
 2. Décrivez :
    - le besoin,
    - la solution proposée,
@@ -32,14 +28,14 @@ Avant d’ouvrir une issue :
 
 ---
 
-##  Workflow GitHub
+## Workflow GitHub
 
 - Fork du projet
 - Création d’une branche :
 
 ```bash
 git checkout -b feature/ma-fonctionnalite
-````
+```
 
 - Respect PSR‑12
 - Tests obligatoires

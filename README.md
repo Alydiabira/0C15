@@ -76,7 +76,7 @@ Il a été développé dans le cadre du parcours Développeur d’Applications P
 
 ---
 
-## 🚀 Pré‑requis
+## Pré‑requis
 
 - PHP 8.2+
 - Composer 2+
@@ -87,7 +87,7 @@ Il a été développé dans le cadre du parcours Développeur d’Applications P
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 Clonez le projet :
 
@@ -189,7 +189,5 @@ php bin/phpunit --coverage-html coverage/
 
 Projet réalisé dans le cadre du parcours OpenClassrooms.
 Usage pédagogique uniquement.
-
-````
 
 ---
