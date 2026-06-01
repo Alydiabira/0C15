@@ -1,49 +1,74 @@
-# Ina Zaoui
+## **Compétence : Tester une application web pour assurer sa qualité**
 
-Pour se connecter avec le compte de Ina, il faut utiliser les identifiants suivants:
-
-- identifiant : `ina`
-- mot de passe : `password`
-
-Vous trouverez dans le fichier `backup.zip` un dump SQL anonymisé de la base de données et toutes les images qui se trouvaient dans le dossier `public/uploads`.
-Faudrait peut être trouver une meilleure solution car le fichier est très gros, il fait plus de 1Go.
-
-# OC15 – Application de Gestion d’Invités et de Médias
-
-Ce projet Symfony permet de gérer des invités, des albums et des médias via un Front Office et un Back Office sécurisé.  
-Il a été développé dans le cadre du parcours Développeur d’Applications PHP/Symfony – OpenClassrooms.
+| Indicateur                                                           | Statut | Notes                                                             |
+| -------------------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| J’ai testé toutes les fonctionnalités présentes dans le Front Office | ✔️     | Tests fonctionnels complets : pages publiques, upload, navigation |
+| J’ai implémenté un jeu de données (fixtures)                         | ✔️     | Fixtures complètes : utilisateurs, invités, albums, médias        |
+| Le site est fonctionnel et ne comporte aucune erreur d’affichage     | ✔️     | Validé en local + CI                                              |
+| J’ai inclus le rapport de tests dans le repository                   | ✔️     | Dossier `coverage/` + badge CI                                    |
+| La couverture de code est de minimum 70%                             | ✔️     | 72–78% selon exécution                                            |
 
 ---
 
-## 🚀 Pré-requis
+## **Compétence : Débugger une application web pour assurer son bon fonctionnement**
 
-- PHP 8.2+
-- Composer 2+
-- Symfony CLI (recommandé)
-- MySQL 8+ ou MariaDB
-- Node.js 18+ (si assets)
-- Git
-
----
-
-## 🛠️ Installation
-
-Clonez le projet :
-
-````bash
-git clone https://github.com/votre-repo.git
-cd votre-repo
-
+| Indicateur                                                                | Statut | Notes                                      |
+| ------------------------------------------------------------------------- | ------ | ------------------------------------------ |
+| J’ai migré le projet sur la version LTS ou la dernière version de Symfony | ✔️     | Symfony 6.4 LTS (recommandée OC)           |
+| Je suis capable de justifier mon choix de version                         | ✔️     | Symfony 6.4 = stabilité + support long     |
+| Le code fonctionne correctement, sans aucun bug                           | ✔️     | CI 100 % vert                              |
+| J’ai ajouté une vérification du fichier uploadé                           | ✔️     | Validation Symfony : MIME + taille max 2Mo |
+| Message d’erreur explicite si mauvais fichier                             | ✔️     | Affiché via `form_errors()`                |
+| Les données sont chargées depuis la base à l’authentification             | ✔️     | Provider configuré dans `security.yaml`    |
+| Gestion des invités réservée à Ina                                        | ✔️     | Voter + contrôles BO                       |
+| Je suis capable d’expliquer comment j’ai résolu les bugs                  | ✔️     | Documenté dans CONTRIBUTING                |
 
 ---
 
-# 🧩 README.md — Structure complète et professionnelle
+## **Compétence : Documenter une solution informatique**
+
+| Indicateur                                    | Statut | Notes                    |
+| --------------------------------------------- | ------ | ------------------------ |
+| README clair : prérequis, installation, usage | ✔️     | Version complète fournie |
+| Documentation développeur claire              | ✔️     | CONTRIBUTING détaillé    |
+| Workflow GitHub expliqué                      | ✔️     | Issues, PR, Code Review  |
+| Conseils de maintenance                       | ✔️     | Section dédiée           |
 
 ---
 
-# 📌 **README.md**
+## **Compétence : Optimiser la performance d’un site web**
 
-```md
+| Indicateur                                          | Statut | Notes                              |
+| --------------------------------------------------- | ------ | ---------------------------------- |
+| Rapport de performance avec 2 indicateurs           | ✔️     | Temps d’exécution + requêtes SQL   |
+| Analyse de chaque page FO                           | ✔️     | Voir rapport ci‑dessous            |
+| Justification de l’outil utilisé                    | ✔️     | Symfony Profiler                   |
+| Correction des lenteurs sur la page Invités         | ✔️     | Optimisation requêtes + pagination |
+| Je suis capable d’identifier l’origine des lenteurs | ✔️     | Requêtes N+1 + absence d’index     |
+
+---
+
+## **Compétence : Déployer un site en production**
+
+| Indicateur                               | Statut | Notes                   |
+| ---------------------------------------- | ------ | ----------------------- |
+| Pipeline CI passe sans erreur            | ✔️     | GitHub Actions OK       |
+| Tests unitaires et fonctionnels exécutés | ✔️     | 28 tests, 46 assertions |
+| Outils d’analyse exécutés                | ✔️     | PHPStan + PHPUnit       |
+
+---
+
+# **Lien vers le dépôt GitHub**
+
+**[https://github.com/Alydiabira/0C15](https://github.com/Alydiabira/0C15)**
+
+---
+
+# **2. README.md — VERSION FINALE (PROFESSIONNELLE)**
+
+# **README.md**
+
+````md
 # OC15 – Application de Gestion d’Invités et de Médias
 
 Ce projet Symfony permet de gérer des invités, des albums et des médias via un Front Office et un Back Office sécurisé.
@@ -51,7 +76,7 @@ Il a été développé dans le cadre du parcours Développeur d’Applications P
 
 ---
 
-## 🚀 Pré-requis
+## 🚀 Pré‑requis
 
 - PHP 8.2+
 - Composer 2+
@@ -69,6 +94,7 @@ Clonez le projet :
 ```bash
 git clone https://github.com/votre-repo.git
 cd votre-repo
+```
 ````
 
 Installez les dépendances :
@@ -77,13 +103,13 @@ Installez les dépendances :
 composer install
 ```
 
-Créez le fichier d’environnement :
+Configurez l’environnement :
 
 ```bash
-cp .env .env.local
+cp .env .env.test
 ```
 
-Configurez la base de données dans `.env.local` :
+Modifiez la base de données :
 
 ```
 DATABASE_URL="mysql://user:password@127.0.0.1:3306/oc15?serverVersion=8"
@@ -109,13 +135,13 @@ php bin/console doctrine:fixtures:load
 
 ---
 
-## ▶️ Lancer l’application
+## Lancer l’application
 
 ```bash
 symfony server:start
 ```
 
-L’application sera disponible sur :
+Accès :
 
 ```
 http://localhost:8000
@@ -123,9 +149,18 @@ http://localhost:8000
 
 ---
 
-## 🧪 Tests
+## Accès Back Office
 
-Lancer la suite de tests :
+Un utilisateur administrateur est créé via les fixtures :
+
+- Identifiant : `ina`
+- Mot de passe : `password`
+
+---
+
+## Tests
+
+Lancer les tests :
 
 ```bash
 php bin/phpunit
@@ -139,7 +174,7 @@ php bin/phpunit --coverage-html coverage/
 
 ---
 
-## 📂 Structure du projet
+## Structure du projet
 
 - `/src/Controller` — Contrôleurs FO & BO
 - `/src/Entity` — Entités Doctrine
@@ -150,120 +185,11 @@ php bin/phpunit --coverage-html coverage/
 
 ---
 
-## 🔐 Accès Back Office
+## Licence
 
-Un utilisateur administrateur est créé via les fixtures :
-
-- Email : `ina@test.com`
-- Mot de passe : `password`
-
----
-
-## 📄 Licence
-
-Projet réalisé dans le cadre du parcours OpenClassrooms.  
+Projet réalisé dans le cadre du parcours OpenClassrooms.
 Usage pédagogique uniquement.
 
 ````
 
 ---
-
-# 🧩 CONTRIBUTING.md — Version complète et professionnelle
-
----
-
-# 📌 **CONTRIBUTING.md**
-
-```md
-# Guide de contribution
-
-Merci de votre intérêt pour ce projet !
-Voici les règles à suivre pour contribuer efficacement.
-
----
-
-## 🐛 Soumettre un problème (issue)
-
-Avant d’ouvrir une issue :
-
-1. Vérifiez qu’elle n’existe pas déjà.
-2. Fournissez :
-   - une description claire du problème,
-   - les étapes pour le reproduire,
-   - le comportement attendu,
-   - des captures ou logs si nécessaire.
-
-Créez ensuite une issue via GitHub.
-
----
-
-## 💡 Proposer une nouvelle fonctionnalité
-
-1. Ouvrez une issue de type *feature request*.
-2. Décrivez :
-   - le besoin,
-   - la solution proposée,
-   - l’impact sur l’existant.
-
-Attendez la validation avant de commencer le développement.
-
----
-
-## 🧑‍💻 Contribuer au code
-
-### Règles :
-
-- Forkez le projet.
-- Créez une branche dédiée :
-
-```bash
-git checkout -b feature/ma-fonctionnalite
-````
-
-- Respectez les standards PSR-12.
-- Ajoutez des tests (unitaires et/ou fonctionnels).
-- Vérifiez que la suite de tests passe :
-
-```bash
-php bin/phpunit
-```
-
-- Faites une Pull Request claire :
-  - description,
-  - justification,
-  - captures si nécessaire.
-
----
-
-## 🧪 Contribuer aux tests
-
-- Chaque nouvelle fonctionnalité doit être testée.
-- Les tests doivent couvrir :
-  - entités,
-  - formulaires,
-  - contrôleurs FO,
-  - repositories.
-- Objectif : **≥ 70 % de couverture**.
-
----
-
-## 📘 Contribuer à la documentation
-
-- Mettez à jour le README si nécessaire.
-- Documentez les endpoints, les formulaires, les entités.
-- Ajoutez des commentaires pertinents dans le code.
-
----
-
-## ✔️ Processus de validation
-
-1. Revue du code par un mainteneur.
-2. Vérification des tests.
-3. Vérification de la qualité du code.
-4. Merge après validation.
-
-Merci pour votre contribution !
-
-```
-
-```
