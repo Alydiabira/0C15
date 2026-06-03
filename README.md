@@ -190,4 +190,4 @@ php bin/phpunit --coverage-html coverage/
 Projet réalisé dans le cadre du parcours OpenClassrooms.
 Usage pédagogique uniquement.
 
----
+
