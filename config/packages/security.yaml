@@ -24,9 +24,6 @@ security:
       custom_authenticators:
         - App\Security\AppAuthenticator
       entry_point: App\Security\AppAuthenticator
-      form_login:
-        login_path: login
-        check_path: login
       logout:
         path: app_logout
         target: /
@@ -36,7 +33,7 @@ security:
     ROLE_INA: ROLE_ADMIN
 
   access_control:
-    - { path: ^/admin/login, roles: PUBLIC_ACCESS }
     - { path: ^/login, roles: PUBLIC_ACCESS }
+    - { path: ^/admin/login, roles: PUBLIC_ACCESS }
     - { path: ^/admin, roles: ROLE_ADMIN }
     - { path: ^/guest, roles: ROLE_USER }
