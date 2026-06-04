@@ -7,27 +7,37 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 trait AuthenticatedTestTrait
 {
-    private function getTestUser(): User
+    private function initSession(KernelBrowser $client): void
     {
-        $user = self::getContainer()
+        $session = $client->getContainer()->get('session');
+        $session->start();
+    }
+
+    private function getAdminUser(): User
+    {
+        return self::getContainer()
             ->get('doctrine')
             ->getRepository(User::class)
             ->findOneBy(['email' => 'ina@test.com']);
+    }
 
-        if (!$user) {
-            throw new \Exception("User 'ina@test.com' not found in test database.");
-        }
-
-        return $user;
+    private function getGuestUser(): User
+    {
+        return self::getContainer()
+            ->get('doctrine')
+            ->getRepository(User::class)
+            ->findOneBy(['type' => 'invite']);
     }
 
     protected function loginAsAdmin(KernelBrowser $client): void
     {
-        $client->loginUser($this->getTestUser(), 'admin');
+        $this->initSession($client);
+        $client->loginUser($this->getAdminUser(), 'main');
     }
 
-    protected function loginAsUser(KernelBrowser $client): void
+    protected function loginAsGuest(KernelBrowser $client): void
     {
-        $client->loginUser($this->getTestUser(), 'main');
+        $this->initSession($client);
+        $client->loginUser($this->getGuestUser(), 'main');
     }
 }

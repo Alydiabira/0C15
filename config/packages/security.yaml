@@ -1,4 +1,6 @@
 security:
+  enable_authenticator_manager: true
+
   password_hashers:
     Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
       algorithm: auto
@@ -14,39 +16,27 @@ security:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
-    admin:
-      pattern: ^/admin
-      provider: app_user_provider
-      lazy: true
-      user_checker: App\Security\UserChecker
-      http_basic: false
-      custom_authenticator:
-        - App\Security\AdminAuthenticator
-      entry_point: App\Security\AdminAuthenticator
-      logout:
-        path: app_logout
-        target: /
-
     main:
       pattern: ^/
       provider: app_user_provider
       lazy: true
       user_checker: App\Security\UserChecker
-      custom_authenticator:
+      custom_authenticators:
         - App\Security\AppAuthenticator
-      remember_me:
-        secret: "%kernel.secret%"
-        lifetime: 604800
-        path: /
+      entry_point: App\Security\AppAuthenticator
+      form_login:
+        login_path: login
+        check_path: login
       logout:
         path: app_logout
         target: /
 
   role_hierarchy:
-    ROLE_INA: ROLE_USER
+    ROLE_ADMIN: ROLE_USER
+    ROLE_INA: ROLE_ADMIN
 
   access_control:
     - { path: ^/admin/login, roles: PUBLIC_ACCESS }
     - { path: ^/login, roles: PUBLIC_ACCESS }
-    - { path: ^/admin, roles: ROLE_INA }
+    - { path: ^/admin, roles: ROLE_ADMIN }
     - { path: ^/guest, roles: ROLE_USER }

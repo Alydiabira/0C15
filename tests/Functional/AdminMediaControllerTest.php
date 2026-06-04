@@ -25,4 +25,28 @@ class AdminMediaControllerTest extends WebTestCase
         $client->request('GET', '/admin/media/add');
         $this->assertResponseIsSuccessful();
     }
+
+    public function test_media_index_denied_for_guest(): void
+    {
+        $client = static::createClient();
+
+        $client->request('GET', '/'); // initialise la session
+        $this->loginAsGuest($client);
+
+        $client->request('GET', '/admin/media');
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function test_media_add_denied_for_guest(): void
+    {
+        $client = static::createClient();
+
+        $client->request('GET', '/'); // initialise la session
+        $this->loginAsGuest($client);
+
+        $client->request('GET', '/admin/media/add');
+
+        $this->assertResponseStatusCodeSame(403);
+    }
 }

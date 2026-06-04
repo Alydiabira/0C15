@@ -2,13 +2,14 @@
 
 namespace App\Tests\Functional;
 
-use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class MediaUploadTest extends WebTestCase
 {
+    use AuthenticatedTestTrait;
+
     private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
     private EntityManagerInterface $em;
 
@@ -18,19 +19,11 @@ class MediaUploadTest extends WebTestCase
         $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
-    private function getUserByEmail(string $email): User
-    {
-        return $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
-    }
-
     public function testUploadValidImage(): void
     {
-        $ina = $this->getUserByEmail('ina@test.com');
+        $this->loginAsAdmin($this->client);
 
-        // Authentification sur le firewall admin
-        $this->client->loginUser($ina, 'admin');
-
-        $path = __DIR__.'/files/0001.jpg';
+        $path = __DIR__ . '/files/0001.jpg';
 
         $file = new UploadedFile(
             $path,

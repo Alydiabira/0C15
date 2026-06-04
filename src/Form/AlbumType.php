@@ -14,6 +14,9 @@ class AlbumType extends AbstractType
     {
         $builder->add('name', TextType::class, [
             'label' => 'Nom',
+            'attr' => [
+                'placeholder' => 'Nom de l’album',
+            ],
         ]);
     }
 

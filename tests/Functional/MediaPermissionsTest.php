@@ -38,7 +38,7 @@ class MediaPermissionsTest extends WebTestCase
     public function testGuestCannotAccessOthersMedia(): void
     {
         $guest = $this->getUserByEmail('invite@test.com');
-        $this->client->loginUser($guest, 'admin'); // ← IMPORTANT
+        $this->client->loginUser($guest, 'main'); // ← FIX
 
         $media = $this->getAnyMedia();
 
@@ -52,7 +52,7 @@ class MediaPermissionsTest extends WebTestCase
     public function testInaCanAccessAllMedia(): void
     {
         $ina = $this->getUserByEmail('ina@test.com');
-        $this->client->loginUser($ina, 'admin'); // ← IMPORTANT
+        $this->client->loginUser($ina, 'main'); // ← FIX
 
         $media = $this->getAnyMedia();
 

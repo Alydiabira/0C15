@@ -3,6 +3,7 @@
 namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\AuthenticatedTestTrait;
 
 class GuestControllerTest extends WebTestCase
 {
@@ -12,8 +13,8 @@ class GuestControllerTest extends WebTestCase
     {
         $client = static::createClient();
 
-        // Authentification dans le firewall main
-        $this->loginAsUser($client);
+        // Seul l’admin peut accéder à /guests
+        $this->loginAsAdmin($client);
 
         $client->request('GET', '/guests');
 

@@ -3,6 +3,7 @@
 namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\AuthenticatedTestTrait;
 
 class GuestShowTest extends WebTestCase
 {
@@ -11,14 +12,17 @@ class GuestShowTest extends WebTestCase
     public function testGuestShowPageLoads(): void
     {
         $client = static::createClient();
-        $this->loginAsUser($client);
 
-        // Récupération du guest créé dans les fixtures
-        $guest = self::getContainer()->get('doctrine')->getRepository(\App\Entity\User::class)
-            ->findOneBy(['type' => 'guest']);
+        // Seul l’admin peut accéder à /guest/{id}
+        $this->loginAsAdmin($client);
 
-        $client->request('GET', '/guest/'.$guest->getId());
+        // Récupération d’un invité existant
+        $guest = self::getContainer()->get('doctrine')
+            ->getRepository(\App\Entity\User::class)
+            ->findOneBy(['type' => 'invite']);
 
-        $this->assertResponseStatusCodeSame(200);
+        $client->request('GET', '/guest/' . $guest->getId());
+
+        $this->assertResponseIsSuccessful();
     }
 }

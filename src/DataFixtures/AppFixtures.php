@@ -25,7 +25,7 @@ class AppFixtures extends Fixture implements FixtureGroupInterface
         $ina->setEmail('ina@test.com');
         $ina->setName('Ina');
         $ina->setType('ina');
-        $ina->setRoles(['ROLE_INA']);
+        $ina->setRoles(['ROLE_ADMIN', 'ROLE_INA']);
         $ina->setPassword($this->hasher->hashPassword($ina, 'password'));
         $manager->persist($ina);
         $this->addReference('user_ina', $ina);
