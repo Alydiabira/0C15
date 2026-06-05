@@ -1,23 +1,26 @@
 framework:
-    secret: '%env(APP_SECRET)%'
-    handle_all_throwables: true
+  secret: "%env(APP_SECRET)%"
+  handle_all_throwables: true
 
-    annotations:
-        enabled: false
+  annotations:
+    enabled: false
 
-    http_method_override: false
+  http_method_override: false
 
-    session:
-        handler_id: null
-        cookie_secure: auto
-        cookie_samesite: lax
-        storage_factory_id: session.storage.factory.native
+  session:
+    enabled: true
+    handler_id: null
+    cookie_secure: auto
+    cookie_samesite: lax
+    storage_factory_id: session.storage.factory.native
 
-    php_errors:
-        log: true
+  php_errors:
+    log: true
 
 when@test:
-    framework:
-        test: true
-        session:
-            storage_factory_id: session.storage.factory.mock_file
+  framework:
+    test: true
+    session:
+      enabled: true
+      handler_id: null
+      storage_factory_id: session.storage.factory.mock_file
