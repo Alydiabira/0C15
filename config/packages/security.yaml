@@ -28,6 +28,8 @@ security:
         path: app_logout
         target: /
       stateless: false
+      remember_me:
+        secret: "%kernel.secret%"
 
   role_hierarchy:
     ROLE_ADMIN: ROLE_USER
