@@ -109,12 +109,25 @@ class AdminAlbumControllerTest extends WebTestCase
         $em->persist($album);
         $em->flush();
 
-        // La session existe maintenant
+        // 1. Créer une session
+        $session = static::getContainer()->get('session.factory')->createSession();
+        $session->start();
+
+        // 2. Attacher la session au client
+        $client->getCookieJar()->set(
+            new \Symfony\Component\BrowserKit\Cookie(
+                $session->getName(),
+                $session->getId()
+            )
+        );
+
+        // 3. Générer le token CSRF dans CETTE session
         $csrfToken = static::getContainer()
             ->get('security.csrf.token_manager')
             ->getToken('delete_album_' . $album->getId())
             ->getValue();
 
+        // 4. Envoyer la requête
         $client->request('POST', '/admin/album/delete/' . $album->getId(), [
             '_token' => $csrfToken,
         ]);

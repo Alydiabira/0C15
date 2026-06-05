@@ -2,42 +2,54 @@
 
 namespace App\Tests\Functional;
 
-use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\BrowserKit\Cookie;
 
 trait AuthenticatedTestTrait
 {
-    private function initSession(KernelBrowser $client): void
+    private function createSession(KernelBrowser $client): SessionInterface
     {
-        $session = $client->getContainer()->get('session');
+        $container = static::getContainer();
+
+        // Symfony 6.3+ : session.factory obligatoire
+        $sessionFactory = $container->get('session.factory');
+        $session = $sessionFactory->createSession();
         $session->start();
+
+        return $session;
     }
 
-    private function getAdminUser(): User
+    private function authenticateUser(KernelBrowser $client, string $email): void
     {
-        return self::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneBy(['email' => 'ina@test.com']);
+        $container = static::getContainer();
+        $session = $this->createSession($client);
+
+        $user = $container->get('doctrine')->getRepository(\App\Entity\User::class)
+            ->findOneBy(['email' => $email]);
+
+        $token = new UsernamePasswordToken(
+            $user,
+            'main',
+            $user->getRoles()
+        );
+
+        $session->set('_security_main', serialize($token));
+        $session->save();
+
+        $client->getCookieJar()->set(
+            new Cookie($session->getName(), $session->getId())
+        );
     }
 
-    private function getGuestUser(): User
+    public function loginAsAdmin(KernelBrowser $client): void
     {
-        return self::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneBy(['type' => 'invite']);
+        $this->authenticateUser($client, 'ina@test.com');
     }
 
-    protected function loginAsAdmin(KernelBrowser $client): void
+    public function loginAsGuest(KernelBrowser $client): void
     {
-        $this->initSession($client);
-        $client->loginUser($this->getAdminUser(), 'main');
-    }
-
-    protected function loginAsGuest(KernelBrowser $client): void
-    {
-        $this->initSession($client);
-        $client->loginUser($this->getGuestUser(), 'main');
+        $this->authenticateUser($client, 'guest@test.com');
     }
 }
