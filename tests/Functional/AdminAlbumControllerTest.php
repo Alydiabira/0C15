@@ -104,36 +104,33 @@ class AdminAlbumControllerTest extends WebTestCase
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
+        // Créer un album
         $album = new Album();
         $album->setName('Album à supprimer');
         $em->persist($album);
         $em->flush();
 
-        // 1. Créer une session
-        $session = static::getContainer()->get('session.factory')->createSession();
-        $session->start();
+        // 1) Appeler une route qui démarre VRAIMENT la session
+        $client->request('GET', '/admin/album/add');
 
-        // 2. Attacher la session au client
-        $client->getCookieJar()->set(
-            new \Symfony\Component\BrowserKit\Cookie(
-                $session->getName(),
-                $session->getId()
-            )
-        );
+        // 2) Récupérer la session RÉELLE du client
+        $session = $client->getRequest()->getSession();
 
-        // 3. Générer le token CSRF dans CETTE session
+        // 3) Générer le token CSRF dans CETTE session
         $csrfToken = static::getContainer()
             ->get('security.csrf.token_manager')
             ->getToken('delete_album_' . $album->getId())
             ->getValue();
 
-        // 4. Envoyer la requête
+        // 4) Envoyer la requête POST
         $client->request('POST', '/admin/album/delete/' . $album->getId(), [
             '_token' => $csrfToken,
         ]);
 
         $this->assertResponseRedirects('/admin/album');
 
+        // 5) Vérifier la suppression
+        $em->clear();
         $deleted = $em->getRepository(Album::class)->find($album->getId());
         $this->assertNull($deleted);
     }
