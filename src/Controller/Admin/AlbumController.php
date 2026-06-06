@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
 
 #[Route('/admin/album')]
 class AlbumController extends AbstractController
@@ -65,13 +67,17 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/delete/{id}', name: 'admin_album_delete', methods: ['POST'])]
-    public function delete(Request $request, Album $album, EntityManagerInterface $em): Response
-    {
+    public function delete(
+        Request $request,
+        Album $album,
+        EntityManagerInterface $em,
+        CsrfTokenManagerInterface $csrfTokenManager
+    ): Response {
         $this->denyAccessUnlessGranted('ROLE_INA');
 
-        $token = (string) $request->request->get('_token');
+        $token = $request->request->get('_token');
 
-        if ($this->isCsrfTokenValid('delete_album_'.$album->getId(), $token)) {
+        if ($csrfTokenManager->isTokenValid(new CsrfToken('delete_album_' . $album->getId(), $token))) {
             $em->remove($album);
             $em->flush();
         }

@@ -12,6 +12,12 @@
         </testsuite>
     </testsuites>
 
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+
     <php>
         <env name="KERNEL_CLASS" value="App\Kernel" />
         <env name="APP_ENV" value="test" />
@@ -19,5 +25,7 @@
         <env name="DATABASE_URL" value="mysql://root:@127.0.0.1:3306/ina_test?charset=utf8mb4" />
         <env name="SHELL_VERBOSITY" value="-1" />
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
+        <env name="APP_DEBUG" value="1" />
+        <env name="DUMP_TESTS" value="1" />
     </php>
 </phpunit>

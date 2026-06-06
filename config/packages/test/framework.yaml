@@ -1,5 +1,15 @@
 framework:
   test: true
+  secret: "%env(APP_SECRET)%"
+  handle_all_throwables: true
+
+  annotations:
+    enabled: false
+
+  http_method_override: false
+
+  php_errors:
+    log: true
 
   session:
     enabled: true

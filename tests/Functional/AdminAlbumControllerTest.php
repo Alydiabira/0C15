@@ -97,40 +97,36 @@ class AdminAlbumControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
-    public function test_delete_album(): void
-    {
-        $client = static::createClient();
-        $this->loginAsAdmin($client);
+   public function test_delete_album(): void
+{
+    $client = static::createClient();
+    $this->loginAsAdmin($client);
 
-        $em = static::getContainer()->get(EntityManagerInterface::class);
+    $em = static::getContainer()->get(EntityManagerInterface::class);
 
-        $album = new Album();
-        $album->setName('Album à supprimer');
-        $em->persist($album);
-        $em->flush();
+    $album = new Album();
+    $album->setName('Album à supprimer');
+    $em->persist($album);
+    $em->flush();
 
-        // 1) Déclenche le firewall
-        $client->request('GET', '/admin');
+    // Charger la page qui contient le formulaire
+    $crawler = $client->request('GET', '/admin/album');
 
-        // 2) Récupère la session DEPUIS LE REQUESTSTACK (méthode officielle Symfony 6.4)
-        $requestStack = static::getContainer()->get('request_stack');
-        $session = $requestStack->getSession();
+    // Sélectionner le formulaire correspondant à cet album
+    $form = $crawler
+        ->filter('form[action="/admin/album/delete/'.$album->getId().'"]')
+        ->form();
 
-        // 3) Génère le token CSRF
-        $csrfToken = static::getContainer()
-            ->get('security.csrf.token_manager')
-            ->getToken('delete_album_' . $album->getId())
-            ->getValue();
+    // Soumettre le formulaire (le token CSRF est déjà dedans)
+    $client->submit($form);
 
-        // 4) Requête POST
-        $client->request('POST', '/admin/album/delete/' . $album->getId(), [
-            '_token' => $csrfToken,
-        ]);
+    $this->assertResponseRedirects('/admin/album');
 
-        $this->assertResponseRedirects('/admin/album');
+    $em->clear();
+    $deleted = $em->getRepository(Album::class)->find($album->getId());
+    $this->assertNull($deleted);
+}
 
-        $em->clear();
-        $deleted = $em->getRepository(Album::class)->find($album->getId());
-        $this->assertNull($deleted);
-    }
+
+
 }
