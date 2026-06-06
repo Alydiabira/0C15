@@ -9,3 +9,8 @@ framework:
 
   php_errors:
     log: true
+
+  session:
+    enabled: true
+
+  csrf_protection: true
