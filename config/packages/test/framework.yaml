@@ -2,6 +2,8 @@ framework:
   test: true
   secret: "%env(APP_SECRET)%"
   handle_all_throwables: true
+  profiler: { enabled: false }
+
 
   annotations:
     enabled: false
