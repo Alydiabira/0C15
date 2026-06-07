@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests\Functional;
+namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -10,14 +10,14 @@ class AdminControllers403Test extends WebTestCase
     {
         $client = static::createClient();
         $client->request('GET', '/admin/album');
-        $this->assertResponseRedirects('/login');
+        $this->assertResponseRedirects('/admin/login');
     }
 
     public function testGuestIsRedirectedFromAdminMedia(): void
     {
         $client = static::createClient();
         $client->request('GET', '/admin/media');
-        $this->assertResponseRedirects('/login');
+        $this->assertResponseRedirects('/admin/login');
     }
 
     public function testGuestIsRedirectedFromAdminInvite(): void
@@ -27,6 +27,6 @@ class AdminControllers403Test extends WebTestCase
         // La bonne route est /admin/invites
         $client->request('GET', '/admin/invites');
 
-        $this->assertResponseRedirects('/login');
+        $this->assertResponseRedirects('/admin/login');
     }
 }

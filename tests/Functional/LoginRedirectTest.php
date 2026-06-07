@@ -10,8 +10,10 @@ class LoginRedirectTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $crawler = $client->request('GET', '/login');
+        // Page de login admin
+        $crawler = $client->request('GET', '/admin/login');
 
+        // Soumission du vrai formulaire (CSRF OK)
         $form = $crawler->filter('form')->form([
             'email' => 'ina@test.com',
             'password' => 'password',

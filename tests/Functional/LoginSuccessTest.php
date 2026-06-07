@@ -10,16 +10,15 @@ class LoginSuccessTest extends WebTestCase
     {
         $client = static::createClient();
 
-        // Accès à la page de login
-        $crawler = $client->request('GET', '/login');
+        // Page de login admin
+        $crawler = $client->request('GET', '/admin/login');
 
-        // Sélection FIABLE du formulaire (pas de selectButton)
+        // Soumission du vrai formulaire (CSRF OK)
         $form = $crawler->filter('form')->form([
             'email' => 'ina@test.com',
             'password' => 'password',
         ]);
 
-        // Soumission
         $client->submit($form);
 
         // Redirection réelle dans ton projet

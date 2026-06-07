@@ -10,10 +10,10 @@ class LoginFailureTest extends WebTestCase
     {
         $client = static::createClient();
 
-        // Page de login
-        $crawler = $client->request('GET', '/login');
+        // Page de login admin
+        $crawler = $client->request('GET', '/admin/login');
 
-        // Soumission du formulaire avec mauvais identifiants
+        // Soumission avec mauvais identifiants
         $form = $crawler->filter('form')->form([
             'email' => 'wrong@test.com',
             'password' => 'wrongpass',
@@ -21,13 +21,13 @@ class LoginFailureTest extends WebTestCase
 
         $client->submit($form);
 
-        // 1) Symfony renvoie TOUJOURS 302 après un échec
-        $this->assertResponseRedirects('/login');
+        // Redirection vers /admin/login
+        $this->assertResponseRedirects('/admin/login');
 
-        // 2) On suit la redirection pour voir la page finale
+        // On suit la redirection
         $crawler = $client->followRedirect();
 
-        // 3) La page finale doit contenir le message d'erreur
+        // Le message d’erreur doit être présent
         $this->assertSelectorExists('.alert-danger');
     }
 }

@@ -21,10 +21,16 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
 
-    public const LOGIN_ROUTE = 'app_login';
+    //  Correction : on écoute maintenant la route admin_login
+    public const LOGIN_ROUTE = 'admin_login';
 
-    public function __construct(private UrlGeneratorInterface $urlGenerator)
+    public function __construct(private UrlGeneratorInterface $urlGenerator) {}
+
+    //  Correction : l’authenticator doit écouter POST /admin/login
+    public function supports(Request $request): bool
     {
+        return $request->attributes->get('_route') === self::LOGIN_ROUTE
+            && $request->isMethod('POST');
     }
 
     public function authenticate(Request $request): Passport
@@ -53,19 +59,20 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
         /** @var User $user */
         $user = $token->getUser();
 
-        // Admin (Ina)
+        //  Redirection admin
         if (in_array('ROLE_INA', $user->getRoles(), true)) {
             return new RedirectResponse(
                 $this->urlGenerator->generate('admin_media_index')
             );
         }
 
-        // Guest
+        //  Redirection guest
         return new RedirectResponse(
             $this->urlGenerator->generate('guest', ['id' => $user->getId()])
         );
     }
 
+    //  Correction : renvoie maintenant /admin/login
     protected function getLoginUrl(Request $request): string
     {
         return $this->urlGenerator->generate(self::LOGIN_ROUTE);

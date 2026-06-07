@@ -13,6 +13,6 @@ class SecurityAccessTest extends WebTestCase
         $client->request('GET', '/admin/album');
 
         // Un invité doit être redirigé vers /login
-        $this->assertResponseRedirects('/login');
+        $this->assertResponseRedirects('/admin/login');
     }
 }

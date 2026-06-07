@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Tests\Functional;
+namespace App\Tests\Functional\Admin;
 
+use App\Tests\Functional\AuthenticatedTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class AdminMediaControllerTest extends WebTestCase

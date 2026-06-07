@@ -1,14 +1,33 @@
 <?php
 
-namespace App\Tests\Functional;
+namespace App\Tests\Functional\Admin;
 
 use App\Entity\Album;
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 
 class AdminAlbumControllerTest extends WebTestCase
 {
-    use AuthenticatedTestTrait;
+    private function loginAsAdmin($client): void
+    {
+        $admin = static::getContainer()
+            ->get('doctrine')
+            ->getRepository(User::class)
+            ->findOneByEmail('ina@test.com');
+
+        $client->loginUser($admin);
+    }
+
+    private function loginAsGuest($client): void
+    {
+        $guest = static::getContainer()
+            ->get('doctrine')
+            ->getRepository(User::class)
+            ->findOneByEmail('guest@test.com');
+
+        $client->loginUser($guest);
+    }
 
     public function test_index_access(): void
     {
@@ -97,36 +116,30 @@ class AdminAlbumControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
-   public function test_delete_album(): void
-{
-    $client = static::createClient();
-    $this->loginAsAdmin($client);
+    public function test_delete_album(): void
+    {
+        $client = static::createClient();
+        $this->loginAsAdmin($client);
 
-    $em = static::getContainer()->get(EntityManagerInterface::class);
+        $em = static::getContainer()->get(EntityManagerInterface::class);
 
-    $album = new Album();
-    $album->setName('Album à supprimer');
-    $em->persist($album);
-    $em->flush();
+        $album = new Album();
+        $album->setName('Album à supprimer');
+        $em->persist($album);
+        $em->flush();
 
-    // Charger la page qui contient le formulaire
-    $crawler = $client->request('GET', '/admin/album');
+        $crawler = $client->request('GET', '/admin/album');
 
-    // Sélectionner le formulaire correspondant à cet album
-    $form = $crawler
-        ->filter('form[action="/admin/album/delete/'.$album->getId().'"]')
-        ->form();
+        $form = $crawler
+            ->filter('form[action="/admin/album/delete/'.$album->getId().'"]')
+            ->form();
 
-    // Soumettre le formulaire (le token CSRF est déjà dedans)
-    $client->submit($form);
+        $client->submit($form);
 
-    $this->assertResponseRedirects('/admin/album');
+        $this->assertResponseRedirects('/admin/album');
 
-    $em->clear();
-    $deleted = $em->getRepository(Album::class)->find($album->getId());
-    $this->assertNull($deleted);
-}
-
-
-
+        $em->clear();
+        $deleted = $em->getRepository(Album::class)->find($album->getId());
+        $this->assertNull($deleted);
+    }
 }
