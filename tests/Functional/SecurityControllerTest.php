@@ -71,9 +71,10 @@ class SecurityControllerTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $client->request('GET', '/admin/logout');
+        // Appelle la route de logout
+        $client->request('GET', '/logout');
 
-        // Le logout est intercepté par le firewall → redirection
+        // Redirection définie dans security.yaml
         $this->assertResponseRedirects('/');
     }
 }
