@@ -4,8 +4,7 @@ namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use App\Repository\UserRepository;
-use App\Repository\InviteRepository;
-use App\Entity\Invite;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
 class AdminInviteDeleteInvalidCsrfTest extends WebTestCase
@@ -24,38 +23,35 @@ class AdminInviteDeleteInvalidCsrfTest extends WebTestCase
         $this->loginAdmin($client);
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
-        $inviteRepo = static::getContainer()->get(InviteRepository::class);
 
-        // Création d'une invitation valide (tous les champs NOT NULL)
-        $invite = new Invite();
-        $invite->setEmail('test-csrf@invite.com');
+        // Email unique pour éviter les collisions
+        $uniqueEmail = 'test-csrf-' . uniqid() . '@invite.com';
+
+        $invite = new User();
+        $invite->setEmail($uniqueEmail);
         $invite->setName('Test Invite');
+        $invite->setType('invite');
         $invite->setIsBlocked(false);
-        $invite->setCreatedAt(new \DateTimeImmutable());
+        $invite->setPassword('dummy');
 
         $em->persist($invite);
         $em->flush();
 
-        // Génération automatique de la bonne route delete
         $url = static::getContainer()->get('router')->generate('admin_invite_delete', [
             'id' => $invite->getId()
         ]);
 
-        // Envoi d'un token CSRF invalide
+        // Token CSRF invalide
         $client->request('POST', $url, [
             '_token' => 'invalid_token'
         ]);
 
-        // Le controller redirige toujours vers l'index
-        $this->assertTrue(
-            $client->getResponse()->isRedirection() ||
-                $client->getResponse()->isSuccessful()
-        );
+        // Ton contrôleur renvoie 302 → on attend 302
+        $this->assertResponseRedirects('/admin/invites', 302);
 
-        // Vérifier que l'invitation n'a PAS été supprimée
+        // L’invitation ne doit PAS être supprimée
         $this->assertNotNull(
-            $inviteRepo->find($invite->getId()),
-            'L’invitation ne doit PAS être supprimée si le CSRF est invalide.'
+            $em->getRepository(User::class)->find($invite->getId())
         );
     }
 }

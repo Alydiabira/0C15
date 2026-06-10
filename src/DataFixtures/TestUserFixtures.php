@@ -29,6 +29,25 @@ class TestUserFixtures extends Fixture implements FixtureGroupInterface
         $ina->setPassword($this->hasher->hashPassword($ina, 'password'));
         $manager->persist($ina);
 
+        // USER simple
+        $user = new User();
+        $user->setEmail('user@test.com');
+        $user->setName('User');
+        $user->setType('user');
+        $user->setRoles(['ROLE_USER']);
+        $user->setPassword($this->hasher->hashPassword($user, 'password'));
+        $manager->persist($user);
+
+        // BLOCKED USER
+        $blocked = new User();
+        $blocked->setEmail('blocked@test.com');
+        $blocked->setName('Blocked');
+        $blocked->setType('user');
+        $blocked->setRoles(['ROLE_USER']);
+        $blocked->setIsBlocked(true);
+        $blocked->setPassword($this->hasher->hashPassword($blocked, 'password'));
+        $manager->persist($blocked);
+
         // INVITE
         $invite = new User();
         $invite->setEmail('invite@test.com');
