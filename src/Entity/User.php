@@ -21,9 +21,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private ?string $email = null;
 
-    /**
-     * @var array<int, string>
-     */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
@@ -42,16 +39,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    /** @var Collection<int, Media> */
-    #[ORM\OneToMany(
-        targetEntity: Media::class,
-        mappedBy: 'user',
-        cascade: ['remove'],
-        orphanRemoval: true
-    )]
+    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['remove'], orphanRemoval: true)]
     private Collection $medias;
 
-    /** @var Collection<int, Invite> */
     #[ORM\OneToMany(targetEntity: Invite::class, mappedBy: 'user')]
     private Collection $invites;
 
@@ -75,7 +65,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -88,7 +77,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
 
-        // Ajout automatique du rôle INA
         if ('ina' === $this->type) {
             $roles[] = 'ROLE_INA';
         }
@@ -96,13 +84,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
-    /**
-     * @param array<int, string> $roles
-     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
-
         return $this;
     }
 
@@ -114,13 +98,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-    }
+    public function eraseCredentials(): void {}
 
     public function isBlocked(): bool
     {
@@ -130,7 +111,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsBlocked(bool $blocked): static
     {
         $this->isBlocked = $blocked;
-
         return $this;
     }
 
@@ -142,7 +122,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setType(string $type): static
     {
         $this->type = $type;
-
         return $this;
     }
 
@@ -154,7 +133,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setName(?string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -166,11 +144,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 
-    /** @return Collection<int, Media> */
     public function getMedias(): Collection
     {
         return $this->medias;
@@ -197,7 +173,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /** @return Collection<int, Invite> */
     public function getInvites(): Collection
     {
         return $this->invites;
@@ -222,5 +197,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
     }
 }

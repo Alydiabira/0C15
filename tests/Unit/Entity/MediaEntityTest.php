@@ -18,6 +18,7 @@ class MediaEntityTest extends TestCase
         $media->setPath('uploads/photo.jpg');
 
         $this->assertSame('My Photo', $media->getTitle());
+        $this->assertSame('My Photo', (string) $media);
         $this->assertSame('uploads/photo.jpg', $media->getPath());
         $this->assertNull($media->getId());
     }
@@ -45,8 +46,6 @@ class MediaEntityTest extends TestCase
     public function testMediaFile(): void
     {
         $media = new Media();
-
-        // On simule un fichier uploadé
         $file = $this->createMock(UploadedFile::class);
 
         $media->setFile($file);
