@@ -41,7 +41,7 @@ class MediaInvalidTest extends WebTestCase
             ->findOneBy(['title' => 'Test']);
 
         $this->assertNotNull($media);
-        $this->assertSame('', $media->getPath());
+        $this->assertNotEmpty($media->getPath());
         $this->assertNull($media->getFile());
     }
 

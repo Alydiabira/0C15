@@ -5,9 +5,12 @@ namespace App\Tests\Functional\Admin;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use App\Repository\UserRepository;
 use App\Repository\UserRepository as InviteRepository;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class AdminInviteAddInvalidPartialTest extends WebTestCase
 {
+    use AdminTestTrait;
+
     private function loginAdmin($client)
     {
         $admin = static::getContainer()->get(UserRepository::class)

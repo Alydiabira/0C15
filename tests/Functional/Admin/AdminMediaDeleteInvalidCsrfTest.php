@@ -3,15 +3,25 @@
 namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use App\Repository\UserRepository;
-use App\Repository\MediaRepository;
+use App\Entity\Media;
+use App\Entity\User;
 
 class AdminMediaDeleteInvalidCsrfTest extends WebTestCase
 {
     private function loginAdmin($client)
     {
-        $admin = static::getContainer()->get(UserRepository::class)
-            ->findOneByEmail('ina@test.com');
+        $em = static::getContainer()->get('doctrine')->getManager();
+
+        $admin = $em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']);
+
+        if (!$admin) {
+            $admin = new User();
+            $admin->setEmail('ina@test.com');
+            $admin->setPassword('x');
+            $admin->setRoles(['ROLE_ADMIN']);
+            $em->persist($admin);
+            $em->flush();
+        }
 
         $client->loginUser($admin);
     }
@@ -21,10 +31,17 @@ class AdminMediaDeleteInvalidCsrfTest extends WebTestCase
         $client = static::createClient();
         $this->loginAdmin($client);
 
-        $mediaRepo = static::getContainer()->get(MediaRepository::class);
-        $media = $mediaRepo->findOneBy([]);
+        $em = static::getContainer()->get('doctrine')->getManager();
 
-        // Génère automatiquement la bonne route delete
+        // Toujours créer un media pour le test
+        $media = new Media();
+        $media->setTitle('Test');
+        $media->setPath('x.jpg');
+        $media->setUser($em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']));
+
+        $em->persist($media);
+        $em->flush();
+
         $url = static::getContainer()->get('router')->generate('admin_media_delete', [
             'id' => $media->getId()
         ]);
@@ -33,16 +50,12 @@ class AdminMediaDeleteInvalidCsrfTest extends WebTestCase
             '_token' => 'invalid_token'
         ]);
 
-        // Ton controller redirige TOUJOURS vers admin_media_index
-        $this->assertTrue(
-            $client->getResponse()->isRedirection() ||
-                $client->getResponse()->isSuccessful()
-        );
+        // Redirection attendue
+        $this->assertResponseRedirects('/admin/media');
 
-        // Vérifier que le média n’a PAS été supprimé
+        // Vérifier que le média existe toujours
         $this->assertNotNull(
-            $mediaRepo->find($media->getId()),
-            'Le média ne doit PAS être supprimé si le CSRF est invalide.'
+            $em->getRepository(Media::class)->find($media->getId())
         );
     }
 }

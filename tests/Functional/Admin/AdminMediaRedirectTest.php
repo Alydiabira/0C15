@@ -8,29 +8,45 @@ use App\Entity\Media;
 
 class AdminMediaRedirectTest extends WebTestCase
 {
+    private function loginAdmin($client)
+    {
+        $em = static::getContainer()->get('doctrine')->getManager();
+
+        $admin = $em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']);
+
+        if (!$admin) {
+            $admin = new User();
+            $admin->setEmail('ina@test.com');
+            $admin->setPassword('x');
+            $admin->setRoles(['ROLE_ADMIN']);
+            $em->persist($admin);
+            $em->flush();
+        }
+
+        $client->loginUser($admin);
+    }
+
     public function testEditMediaRedirectsToIndex(): void
     {
         $client = static::createClient();
+        $this->loginAdmin($client);
 
-        // Connexion admin
-        $admin = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneByEmail('ina@test.com');
+        $em = static::getContainer()->get('doctrine')->getManager();
 
-        $client->loginUser($admin);
+        // Créer un media
+        $media = new Media();
+        $media->setTitle('Test');
+        $media->setPath('x.jpg');
+        $media->setUser($em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']));
 
-        // Récupération d'un média existant
-        $media = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(Media::class)
-            ->findOneBy([]);
+        $em->persist($media);
+        $em->flush();
 
-        // Accès à la bonne route
+        // Accès à la page d’édition
         $crawler = $client->request('GET', '/admin/media/edit/' . $media->getId());
 
         // Sélection FIABLE du formulaire
-        $form = $crawler->filter('form')->form([
+        $form = $crawler->filter('form[name="media"]')->form([
             'media[title]' => 'Updated title',
         ]);
 

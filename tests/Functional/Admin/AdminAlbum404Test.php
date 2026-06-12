@@ -3,20 +3,16 @@
 namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use App\Repository\UserRepository;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class AdminAlbum404Test extends WebTestCase
 {
-    private function loginAdmin($client)
-    {
-        $admin = static::getContainer()->get(UserRepository::class)->findOneByEmail('ina@test.com');
-        $client->loginUser($admin);
-    }
+    use AdminTestTrait;
 
     public function testShowAlbumNotFound(): void
     {
         $client = static::createClient();
-        $this->loginAdmin($client);
+        $this->loginAsAdmin($client);
 
         $client->request('GET', '/admin/album/999999');
         $this->assertResponseStatusCodeSame(404);
@@ -25,7 +21,7 @@ class AdminAlbum404Test extends WebTestCase
     public function testEditAlbumNotFound(): void
     {
         $client = static::createClient();
-        $this->loginAdmin($client);
+        $this->loginAsAdmin($client);
 
         $client->request('GET', '/admin/album/999999/edit');
         $this->assertResponseStatusCodeSame(404);
@@ -34,7 +30,7 @@ class AdminAlbum404Test extends WebTestCase
     public function testDeleteAlbumNotFound(): void
     {
         $client = static::createClient();
-        $this->loginAdmin($client);
+        $this->loginAsAdmin($client);
 
         $client->request('POST', '/admin/album/999999/delete', [
             '_token' => 'invalid'

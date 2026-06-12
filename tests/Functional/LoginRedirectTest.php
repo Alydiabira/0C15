@@ -3,17 +3,20 @@
 namespace App\Tests\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class LoginRedirectTest extends WebTestCase
 {
+    use AdminTestTrait;
+
     public function testLoginRedirectsToHomepage(): void
     {
         $client = static::createClient();
 
-        // Page de login admin
+        $this->createIna(); // ← obligatoire
+
         $crawler = $client->request('GET', '/admin/login');
 
-        // Soumission du vrai formulaire (CSRF OK)
         $form = $crawler->filter('form')->form([
             'email' => 'ina@test.com',
             'password' => 'password',
@@ -21,7 +24,6 @@ class LoginRedirectTest extends WebTestCase
 
         $client->submit($form);
 
-        // Redirection réelle dans ton projet
         $this->assertResponseRedirects('/admin/media');
     }
 }

@@ -4,9 +4,12 @@ namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use App\Entity\User;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class AdminAlbumRedirectTest extends WebTestCase
 {
+    use AdminTestTrait;
+
     public function testCreateAlbumRedirectsToIndex(): void
     {
         $client = static::createClient();

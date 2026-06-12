@@ -3,28 +3,31 @@
 namespace App\Tests\Functional\Admin;
 
 use App\Entity\Album;
-use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class AdminAlbumControllerTest extends WebTestCase
 {
-    private function loginAsAdmin($client): void
-    {
-        $admin = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneByEmail('ina@test.com');
-
-        $client->loginUser($admin);
-    }
+    use AdminTestTrait;
 
     private function loginAsGuest($client): void
     {
-        $guest = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneByEmail('guest@test.com');
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $repo = $em->getRepository(\App\Entity\User::class);
+
+        $guest = $repo->findOneBy(['email' => 'guest@test.com']);
+
+        if (!$guest) {
+            $guest = new \App\Entity\User();
+            $guest->setEmail('guest@test.com');
+            $guest->setPassword('x');
+            $guest->setRoles(['ROLE_USER']);
+            $guest->setIsBlocked(false);
+
+            $em->persist($guest);
+            $em->flush();
+        }
 
         $client->loginUser($guest);
     }
@@ -131,7 +134,7 @@ class AdminAlbumControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/album');
 
         $form = $crawler
-            ->filter('form[action="/admin/album/delete/'.$album->getId().'"]')
+            ->filter('form[action="/admin/album/delete/' . $album->getId() . '"]')
             ->form();
 
         $client->submit($form);

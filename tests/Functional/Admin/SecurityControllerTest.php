@@ -3,9 +3,12 @@
 namespace App\Tests\Functional\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\Traits\AdminTestTrait;
 
 class SecurityControllerTest extends WebTestCase
 {
+    use AdminTestTrait;
+
     public function testAdminLoginPageLoads(): void
     {
         $client = static::createClient();
@@ -38,6 +41,8 @@ class SecurityControllerTest extends WebTestCase
     public function testAdminLoginSuccess(): void
     {
         $client = static::createClient();
+
+        $this->createIna(); // ← obligatoire
 
         $crawler = $client->request('GET', '/admin/login');
 

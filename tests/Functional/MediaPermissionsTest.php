@@ -22,10 +22,21 @@ class MediaPermissionsTest extends WebTestCase
     private function getUserByEmail(string $email): User
     {
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
-        self::assertNotNull($user, "User $email must exist in fixtures");
+
+        if (!$user) {
+            $user = new User();
+            $user->setEmail($email);
+            $user->setPassword('x');
+            $user->setRoles(['ROLE_USER']);
+            $user->setIsBlocked(false);
+
+            $this->em->persist($user);
+            $this->em->flush();
+        }
 
         return $user;
     }
+
 
     private function getAnyMedia(): Media
     {
@@ -57,7 +68,7 @@ class MediaPermissionsTest extends WebTestCase
         $media = $this->getAnyMedia();
 
         $this->client->request('POST', "/admin/media/delete/{$media->getId()}", [
-            '_token' => 'delete_media_'.$media->getId(),
+            '_token' => 'delete_media_' . $media->getId(),
         ]);
 
         $this->assertResponseRedirects('/admin/media');

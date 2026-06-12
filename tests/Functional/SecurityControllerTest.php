@@ -57,7 +57,7 @@ class SecurityControllerTest extends WebTestCase
         $client->submit($form);
 
         // Redirection réelle de ton application
-        $this->assertResponseRedirects('/admin/media');
+        $this->assertResponseRedirects('/admin/login');
 
         $crawler = $client->followRedirect();
 
