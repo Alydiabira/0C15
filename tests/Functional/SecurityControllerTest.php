@@ -42,28 +42,23 @@ class SecurityControllerTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $user = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(User::class)
-            ->findOneByEmail('ina@test.com');
-
         $crawler = $client->request('GET', '/admin/login');
 
         $form = $crawler->filter('form')->form([
             'email' => 'ina@test.com',
-            'password' => 'password', // ton mot de passe fixture
+            'password' => 'password',
         ]);
 
         $client->submit($form);
 
-        // Redirection réelle de ton application
-        $this->assertResponseRedirects('/admin/login');
+        // ✔ Correction ici
+        $this->assertResponseRedirects('/admin/media');
 
         $crawler = $client->followRedirect();
 
-        // Vérifier que la page admin/media est bien chargée
         $this->assertSelectorExists('h1');
     }
+
 
 
 

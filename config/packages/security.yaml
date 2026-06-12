@@ -39,6 +39,11 @@ security:
       custom_authenticators:
         - App\Security\AppAuthenticator
       entry_point: App\Security\AppAuthenticator
+
+      form_login:
+        login_path: admin_login
+        check_path: admin_login
+
       logout:
         path: app_logout
         target: /

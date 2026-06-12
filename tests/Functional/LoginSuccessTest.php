@@ -13,7 +13,7 @@ class LoginSuccessTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $this->createIna(); // ← obligatoire
+        $this->createIna();
 
         $crawler = $client->request('GET', '/admin/login');
 
