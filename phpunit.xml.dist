@@ -2,7 +2,7 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
-    bootstrap="vendor/autoload.php"
+    bootstrap="bootstrap.php"
     colors="true"
     cacheDirectory=".phpunit.cache"
 >
@@ -23,13 +23,12 @@
     </source>
 
     <php>
-        <env name="KERNEL_CLASS" value="App\Kernel" />
         <env name="APP_ENV" value="test" />
-        <env name="APP_SECRET" value="testsecret" />
-        <env name="DATABASE_URL" value="mysql://root:@127.0.0.1:3306/ina_test?charset=utf8mb4" />
-        <env name="SHELL_VERBOSITY" value="-1" />
-        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
         <env name="APP_DEBUG" value="1" />
-        <env name="DUMP_TESTS" value="1" />
+        <env name="APP_SECRET" value="testsecret" />
+        <env name="KERNEL_CLASS" value="App\Kernel" />
+        <env name="DATABASE_URL" value="mysql://root:@127.0.0.1:3306/ina_test?charset=utf8mb4" />
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
+        <env name="SHELL_VERBOSITY" value="-1" />
     </php>
 </phpunit>

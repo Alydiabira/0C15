@@ -3,47 +3,90 @@
 namespace App\Tests\Functional;
 
 use App\Entity\User;
+use App\Entity\Media;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Liip\TestFixturesBundle\Services\DatabaseToolCollection;
 
 trait AuthenticatedTestTrait
 {
-    private function getOrCreateUser(KernelBrowser $client, string $email, array $roles): User
+    private $databaseTool;
+
+    protected function setUp(): void
     {
-        $container = $client->getContainer();
-        $em = $container->get(EntityManagerInterface::class);
+        parent::setUp();
 
-        $repo = $em->getRepository(User::class);
+        // Charge automatiquement les fixtures test
+        $this->databaseTool = static::getContainer()
+            ->get(DatabaseToolCollection::class)
+            ->get();
 
-        $user = $repo->findOneBy(['email' => $email]);
+        $this->databaseTool->loadFixtures([
+            \App\DataFixtures\TestUserFixtures::class,
+        ]);
+    }
 
-        if (!$user) {
-            $user = new User();
-            $user->setEmail($email);
-            $user->setPassword('test'); // pas important en test
-            $user->setRoles($roles);
-            $user->setIsBlocked(false);
+    protected function em(): EntityManagerInterface
+    {
+        return static::getContainer()->get(EntityManagerInterface::class);
+    }
 
-            $em->persist($user);
-            $em->flush();
+    protected function getAdminUser(): User
+    {
+        return $this->em()->getRepository(User::class)
+            ->findOneBy(['email' => 'ina@test.com']);
+    }
+
+    protected function getUser(): User
+    {
+        return $this->em()->getRepository(User::class)
+            ->findOneBy(['email' => 'user@test.com']);
+    }
+
+    protected function getGuestUser(): User
+    {
+        return $this->em()->getRepository(User::class)
+            ->findOneBy(['email' => 'guest@test.com']);
+    }
+
+    protected function loginAsAdmin(KernelBrowser $client): void
+    {
+        $client->loginUser($this->getAdminUser());
+    }
+
+    protected function loginAsGuest(KernelBrowser $client): void
+    {
+        $client->loginUser($this->getGuestUser());
+    }
+
+    protected function createMediaForUser(User $user): Media
+    {
+        $media = new Media();
+        $media->setTitle('Test media');
+        $media->setPath('uploads/test.jpg');
+        $media->setUser($user);
+
+        $this->em()->persist($media);
+        $this->em()->flush();
+
+        return $media;
+    }
+
+    protected function generateCsrfToken(string $id, KernelBrowser $client): string
+    {
+        $session = $client->getRequest()->getSession();
+        if (!$session->isStarted()) {
+            $session->start();
         }
 
-        return $user;
-    }
+        $requestStack = static::getContainer()->get('request_stack');
+        $request = $client->getRequest();
+        $request->setSession($session);
+        $requestStack->push($request);
 
-    private function authenticateUser(KernelBrowser $client, string $email, array $roles): void
-    {
-        $user = $this->getOrCreateUser($client, $email, $roles);
-        $client->loginUser($user);
-    }
-
-    public function loginAsAdmin(KernelBrowser $client): void
-    {
-        $this->authenticateUser($client, 'ina@test.com', ['ROLE_ADMIN']);
-    }
-
-    public function loginAsGuest(KernelBrowser $client): void
-    {
-        $this->authenticateUser($client, 'guest@test.com', ['ROLE_USER']);
+        return static::getContainer()
+            ->get('security.csrf.token_manager')
+            ->getToken($id)
+            ->getValue();
     }
 }
