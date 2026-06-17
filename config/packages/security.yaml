@@ -24,21 +24,6 @@ security:
       custom_authenticators:
         - App\Security\AppAuthenticator
       entry_point: App\Security\AppAuthenticator
-      logout:
-        path: app_logout
-        target: /
-      stateless: false
-      remember_me:
-        secret: "%kernel.secret%"
-
-    admin:
-      pattern: ^/admin
-      provider: app_user_provider
-      lazy: true
-      user_checker: App\Security\UserChecker
-      custom_authenticators:
-        - App\Security\AppAuthenticator
-      entry_point: App\Security\AppAuthenticator
 
       form_login:
         login_path: admin_login
@@ -47,7 +32,7 @@ security:
       logout:
         path: app_logout
         target: /
-      stateless: false
+
       remember_me:
         secret: "%kernel.secret%"
 
@@ -56,7 +41,7 @@ security:
     ROLE_INA: ROLE_ADMIN
 
   access_control:
-    - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+    - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/admin, roles: ROLE_ADMIN }
     - { path: ^/guest, roles: ROLE_USER }

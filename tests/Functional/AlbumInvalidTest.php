@@ -19,17 +19,19 @@ class AlbumInvalidTest extends WebTestCase
 
         $client->loginUser($admin);
 
-        $album = static::getContainer()
-            ->get('doctrine')
-            ->getRepository(Album::class)
-            ->findOneBy([]);
+        // Création d’un album
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $album = new Album();
+        $album->setName('Test Album');   // <-- CORRECTION ICI
+        $album->setUser($admin);
+        $em->persist($album);
+        $em->flush();
 
         // Mauvais token
-        $client->request('POST', '/admin/album/delete/'.$album->getId(), [
+        $client->request('POST', '/admin/album/delete/' . $album->getId(), [
             '_token' => 'invalid_token',
         ]);
 
-        // Le controller ne supprime pas → redirection vers index
         $this->assertResponseRedirects('/admin/album');
     }
 
@@ -44,7 +46,6 @@ class AlbumInvalidTest extends WebTestCase
 
         $client->loginUser($admin);
 
-        // ID impossible
         $client->request('GET', '/admin/album/edit/999999');
 
         $this->assertResponseStatusCodeSame(404);

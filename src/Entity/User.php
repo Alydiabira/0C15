@@ -42,12 +42,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['remove'], orphanRemoval: true)]
     private Collection $medias;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Album::class, cascade: ['remove'])]
+    private Collection $albums;
+
     #[ORM\OneToMany(targetEntity: Invite::class, mappedBy: 'user')]
     private Collection $invites;
 
     public function __construct()
     {
         $this->medias = new ArrayCollection();
+        $this->albums = new ArrayCollection();
         $this->invites = new ArrayCollection();
         $this->roles = ['ROLE_USER'];
     }
@@ -167,6 +171,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->medias->removeElement($media)) {
             if ($media->getUser() === $this) {
                 $media->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getAlbums(): Collection
+    {
+        return $this->albums;
+    }
+
+    public function addAlbum(Album $album): static
+    {
+        if (!$this->albums->contains($album)) {
+            $this->albums->add($album);
+            $album->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAlbum(Album $album): static
+    {
+        if ($this->albums->removeElement($album)) {
+            if ($album->getUser() === $this) {
+                $album->setUser(null);
             }
         }
 

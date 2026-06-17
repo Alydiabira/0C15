@@ -20,6 +20,10 @@ class Album
     #[Assert\NotBlank(message: 'Le nom de l’album est obligatoire.')]
     private ?string $name = null;
 
+    #[ORM\ManyToOne(inversedBy: 'albums')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
+
     #[ORM\OneToMany(mappedBy: 'album', targetEntity: Media::class, cascade: ['persist', 'remove'])]
     private Collection $media;
 
@@ -41,6 +45,17 @@ class Album
     public function setName(?string $name): static
     {
         $this->name = $name;
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
         return $this;
     }
 

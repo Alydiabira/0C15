@@ -12,11 +12,9 @@ trait AuthenticatedTestTrait
 {
     private $databaseTool;
 
-    protected function setUp(): void
+    protected function loadTestFixtures(): void
     {
-        parent::setUp();
-
-        // Charge automatiquement les fixtures test
+        // ⚠️ NE PAS appeler getContainer() avant createClient()
         $this->databaseTool = static::getContainer()
             ->get(DatabaseToolCollection::class)
             ->get();
@@ -51,11 +49,13 @@ trait AuthenticatedTestTrait
 
     protected function loginAsAdmin(KernelBrowser $client): void
     {
+        $this->loadTestFixtures(); // ← Fixtures chargées APRÈS createClient()
         $client->loginUser($this->getAdminUser());
     }
 
     protected function loginAsGuest(KernelBrowser $client): void
     {
+        $this->loadTestFixtures();
         $client->loginUser($this->getGuestUser());
     }
 

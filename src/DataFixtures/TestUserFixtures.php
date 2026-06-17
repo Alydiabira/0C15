@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -66,12 +67,26 @@ class TestUserFixtures extends Fixture implements FixtureGroupInterface
         $guest->setPassword($this->hasher->hashPassword($guest, 'password'));
         $manager->persist($guest);
 
+        // ALBUM lié à INA
+        $album = new Album();
+        $album->setName('Album Test');
+        $album->setUser($ina);
+        $manager->persist($album);
+
+        // MEDIA lié à INA + Album
+        $media1 = new Media();
+        $media1->setTitle('Media Test');
+        $media1->setPath('uploads/test.jpg');
+        $media1->setUser($ina);
+        $media1->setAlbum($album);
+        $manager->persist($media1);
+
         // MEDIA lié à invite@test.com
-        $media = new Media();
-        $media->setTitle('Media test');
-        $media->setPath('uploads/test.jpg');
-        $media->setUser($invite);
-        $manager->persist($media);
+        $media2 = new Media();
+        $media2->setTitle('Media Invite');
+        $media2->setPath('uploads/test2.jpg');
+        $media2->setUser($invite);
+        $manager->persist($media2);
 
         $manager->flush();
     }
