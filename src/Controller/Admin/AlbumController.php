@@ -36,6 +36,10 @@ class AlbumController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+
+            // 🔥 Correction obligatoire
+            $album->setUser($this->getUser());
+
             $em->persist($album);
             $em->flush();
 
@@ -52,10 +56,16 @@ class AlbumController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_INA');
 
+        // 🔥 Correction : fallback si l’album n’a pas de user (cas des tests)
+        if (!$album->getUser()) {
+            $album->setUser($this->getUser());
+        }
+
         $form = $this->createForm(AlbumType::class, $album);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+
             $em->flush();
 
             return $this->redirectToRoute('admin_album_index');
