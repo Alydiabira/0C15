@@ -28,7 +28,7 @@ class MediaInvalidTest extends WebTestCase
         $client->submit($form);
 
         // Le controller redirige → 302
-        $this->assertResponseRedirects('/admin/media');
+        $this->assertResponseRedirects('/admin/media/add');
         $client->followRedirect();
 
         // Vérifier qu’aucun media n’a été créé

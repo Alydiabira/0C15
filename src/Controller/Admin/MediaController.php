@@ -64,11 +64,16 @@ class MediaController extends AbstractController
             /** @var UploadedFile|null $file */
             $file = $form->get('file')->getData();
 
-            if ($file instanceof UploadedFile) {
-                $filename = md5(uniqid()).'.'.$file->guessExtension();
-                $file->move('uploads/', $filename);
-                $media->setPath('uploads/'.$filename);
+            // 🔥 Correction : empêcher la création sans fichier
+            if (!$file instanceof UploadedFile) {
+                $this->addFlash('error', 'Aucun fichier envoyé.');
+                return $this->redirectToRoute('admin_media_add');
             }
+
+            // Upload du fichier
+            $filename = md5(uniqid()) . '.' . $file->guessExtension();
+            $file->move('uploads/', $filename);
+            $media->setPath('uploads/' . $filename);
 
             if (!$this->isGranted('ROLE_INA')) {
                 $user = $this->getUser();
@@ -82,6 +87,7 @@ class MediaController extends AbstractController
 
             return $this->redirectToRoute('admin_media_index');
         }
+
 
         return $this->render('admin/media/add.html.twig', [
             'form' => $form->createView(),
@@ -101,13 +107,13 @@ class MediaController extends AbstractController
         }
 
         // Upload du fichier
-        $filename = md5(uniqid()).'.'.$file->guessExtension();
+        $filename = md5(uniqid()) . '.' . $file->guessExtension();
         $file->move('uploads/', $filename);
 
         // Création de l'entité Media
         $media = new Media();
         $media->setTitle($filename);
-        $media->setPath('uploads/'.$filename);
+        $media->setPath('uploads/' . $filename);
         $user = $this->getUser();
         if ($user instanceof \App\Entity\User) {
             $media->setUser($user);
@@ -129,7 +135,7 @@ class MediaController extends AbstractController
 
         $token = (string) $request->request->get('_token');
 
-        if ($this->isCsrfTokenValid('delete_media_'.$media->getId(), $token)) {
+        if ($this->isCsrfTokenValid('delete_media_' . $media->getId(), $token)) {
             // Suppression du fichier physique
             if ($media->getPath() && is_file($media->getPath())) {
                 unlink($media->getPath());
@@ -166,9 +172,9 @@ class MediaController extends AbstractController
                     unlink($media->getPath());
                 }
 
-                $filename = md5(uniqid()).'.'.$file->guessExtension();
+                $filename = md5(uniqid()) . '.' . $file->guessExtension();
                 $file->move('uploads/', $filename);
-                $media->setPath('uploads/'.$filename);
+                $media->setPath('uploads/' . $filename);
             }
 
             $em->flush();

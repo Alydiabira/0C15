@@ -6,6 +6,8 @@ use App\Entity\Album;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Tests\Functional\Traits\AdminTestTrait;
+use App\Entity\User;
+
 
 class AdminAlbumControllerTest extends WebTestCase
 {
@@ -14,7 +16,7 @@ class AdminAlbumControllerTest extends WebTestCase
     private function loginAsGuest($client): void
     {
         $em = static::getContainer()->get(EntityManagerInterface::class);
-        $repo = $em->getRepository(\App\Entity\User::class);
+        $repo = $em->getRepository(User::class);
 
         $guest = $repo->findOneBy(['email' => 'guest@test.com']);
 
@@ -90,8 +92,11 @@ class AdminAlbumControllerTest extends WebTestCase
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
+        $admin = $em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']);
+
         $album = new Album();
         $album->setName('Album Original');
+        $album->setUser($admin); // 🔥 OBLIGATOIRE
         $em->persist($album);
         $em->flush();
 
@@ -110,6 +115,7 @@ class AdminAlbumControllerTest extends WebTestCase
         $this->assertSame('Album Modifié', $album->getName());
     }
 
+
     public function test_update_denied_for_guest(): void
     {
         $client = static::createClient();
@@ -126,8 +132,11 @@ class AdminAlbumControllerTest extends WebTestCase
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
+        $admin = $em->getRepository(User::class)->findOneBy(['email' => 'ina@test.com']);
+
         $album = new Album();
         $album->setName('Album à supprimer');
+        $album->setUser($admin); // 🔥 OBLIGATOIRE
         $em->persist($album);
         $em->flush();
 
